@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceExample_VS110", "MarketPriceExample_VS110.csproj", "{CEFCA87D-DA5A-4FDB-B4B7-B526370D0F5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceBatchViewExample_VS110", "MarketPriceBatchViewExample_VS110.csproj", "{4668B659-E648-4B04-8D4C-1A9AE7750A27}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceAuthenticationExample_VS110", "MarketPriceAuthenticationExample_VS110.csproj", "{5270592C-BBF0-4236-A614-363E87C63F81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPricePostingExample_VS110", "MarketPricePostingExample_VS110.csproj", "{6151291E-8820-404F-9D8C-689BEF864E9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPricePingExample_VS110", "MarketPricePingExample_VS110.csproj", "{3889ECDA-22BB-425B-8C86-AB616AD6FF4B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CEFCA87D-DA5A-4FDB-B4B7-B526370D0F5A}.Debug|x86.ActiveCfg = Debug|x86
+		{CEFCA87D-DA5A-4FDB-B4B7-B526370D0F5A}.Debug|x86.Build.0 = Debug|x86
+		{CEFCA87D-DA5A-4FDB-B4B7-B526370D0F5A}.Release|x86.ActiveCfg = Release|x86
+		{CEFCA87D-DA5A-4FDB-B4B7-B526370D0F5A}.Release|x86.Build.0 = Release|x86
+		{4668B659-E648-4B04-8D4C-1A9AE7750A27}.Debug|x86.ActiveCfg = Debug|x86
+		{4668B659-E648-4B04-8D4C-1A9AE7750A27}.Debug|x86.Build.0 = Debug|x86
+		{4668B659-E648-4B04-8D4C-1A9AE7750A27}.Release|x86.ActiveCfg = Release|x86
+		{4668B659-E648-4B04-8D4C-1A9AE7750A27}.Release|x86.Build.0 = Release|x86
+		{5270592C-BBF0-4236-A614-363E87C63F81}.Debug|x86.ActiveCfg = Debug|x86
+		{5270592C-BBF0-4236-A614-363E87C63F81}.Debug|x86.Build.0 = Debug|x86
+		{5270592C-BBF0-4236-A614-363E87C63F81}.Release|x86.ActiveCfg = Release|x86
+		{5270592C-BBF0-4236-A614-363E87C63F81}.Release|x86.Build.0 = Release|x86
+		{6151291E-8820-404F-9D8C-689BEF864E9E}.Debug|x86.ActiveCfg = Debug|x86
+		{6151291E-8820-404F-9D8C-689BEF864E9E}.Debug|x86.Build.0 = Debug|x86
+		{6151291E-8820-404F-9D8C-689BEF864E9E}.Release|x86.ActiveCfg = Release|x86
+		{6151291E-8820-404F-9D8C-689BEF864E9E}.Release|x86.Build.0 = Release|x86
+		{3889ECDA-22BB-425B-8C86-AB616AD6FF4B}.Debug|x86.ActiveCfg = Debug|x86
+		{3889ECDA-22BB-425B-8C86-AB616AD6FF4B}.Debug|x86.Build.0 = Debug|x86
+		{3889ECDA-22BB-425B-8C86-AB616AD6FF4B}.Release|x86.ActiveCfg = Release|x86
+		{3889ECDA-22BB-425B-8C86-AB616AD6FF4B}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

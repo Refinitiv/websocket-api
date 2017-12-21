@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Websocket API Android</string>
+    <string name="action_settings">Settings</string>
+    <string name="hostname_label">Hostname</string>
+    <string name="hostname_default">127.0.0.1</string>
+    <string name="port_label">Port</string>
+    <string name="port_default">15000</string>
+    <string name="auth_hostname_label">Auth Hostname</string>
+    <string name="auth_hostname_default">127.0.0.1</string>
+    <string name="auth_port_label">Auth Port</string>
+    <string name="auth_port_default">8443</string>
+    <string name="username_label">Username</string>
+    <string name="username_default">root</string>
+    <string name="password_label">Password</string>
+    <string name="button_label">Go!</string>
+    <string name="close_button_label">Close</string>
+    <string name="clear_button_label">Clear</string>
+    <string name="messages_label">Messages:</string>
+    <string name="mp_label">Market Price</string>
+    <string name="mpbv_label">Market Price Batch View</string>
+    <string name="mp_posting_label">Market Price Posting</string>
+    <string name="authentication_label">Authentication</string>
+</resources>

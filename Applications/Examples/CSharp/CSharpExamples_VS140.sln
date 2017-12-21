@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceAuthenticationExample_VS140", "MarketPriceAuthenticationExample_VS140.csproj", "{5CA8ED52-9A18-4183-8AE6-98BBC0AD5386}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceExample_VS140", "MarketPriceExample_VS140.csproj", "{4919FCBB-4332-4A9B-BA33-E0A22E6CE070}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPriceBatchViewExample_VS140", "MarketPriceBatchViewExample_VS140.csproj", "{C6B4B558-25B3-4CD7-B9C6-3B0371B9EC78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPricePostingExample_VS140", "MarketPricePostingExample_VS140.csproj", "{34F5D6B5-5CED-4A6B-8B84-18BF8DD6F751}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketPricePingExample_VS140", "MarketPricePingExample_VS140.csproj", "{33C5C20A-EC32-4436-9A31-3643B35AB6A2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CA8ED52-9A18-4183-8AE6-98BBC0AD5386}.Debug|x86.ActiveCfg = Debug|x86
+		{5CA8ED52-9A18-4183-8AE6-98BBC0AD5386}.Debug|x86.Build.0 = Debug|x86
+		{5CA8ED52-9A18-4183-8AE6-98BBC0AD5386}.Release|x86.ActiveCfg = Release|x86
+		{5CA8ED52-9A18-4183-8AE6-98BBC0AD5386}.Release|x86.Build.0 = Release|x86
+		{4919FCBB-4332-4A9B-BA33-E0A22E6CE070}.Debug|x86.ActiveCfg = Debug|x86
+		{4919FCBB-4332-4A9B-BA33-E0A22E6CE070}.Debug|x86.Build.0 = Debug|x86
+		{4919FCBB-4332-4A9B-BA33-E0A22E6CE070}.Release|x86.ActiveCfg = Release|x86
+		{4919FCBB-4332-4A9B-BA33-E0A22E6CE070}.Release|x86.Build.0 = Release|x86
+		{C6B4B558-25B3-4CD7-B9C6-3B0371B9EC78}.Debug|x86.ActiveCfg = Debug|x86
+		{C6B4B558-25B3-4CD7-B9C6-3B0371B9EC78}.Debug|x86.Build.0 = Debug|x86
+		{C6B4B558-25B3-4CD7-B9C6-3B0371B9EC78}.Release|x86.ActiveCfg = Release|x86
+		{C6B4B558-25B3-4CD7-B9C6-3B0371B9EC78}.Release|x86.Build.0 = Release|x86
+		{34F5D6B5-5CED-4A6B-8B84-18BF8DD6F751}.Debug|x86.ActiveCfg = Debug|x86
+		{34F5D6B5-5CED-4A6B-8B84-18BF8DD6F751}.Debug|x86.Build.0 = Debug|x86
+		{34F5D6B5-5CED-4A6B-8B84-18BF8DD6F751}.Release|x86.ActiveCfg = Release|x86
+		{34F5D6B5-5CED-4A6B-8B84-18BF8DD6F751}.Release|x86.Build.0 = Release|x86
+		{33C5C20A-EC32-4436-9A31-3643B35AB6A2}.Debug|x86.ActiveCfg = Debug|x86
+		{33C5C20A-EC32-4436-9A31-3643B35AB6A2}.Debug|x86.Build.0 = Debug|x86
+		{33C5C20A-EC32-4436-9A31-3643B35AB6A2}.Release|x86.ActiveCfg = Release|x86
+		{33C5C20A-EC32-4436-9A31-3643B35AB6A2}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

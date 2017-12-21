@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.thomsonreuters.android.MainActivity">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/enter_info_block">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/hostname_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/hostname_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/port_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/port_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1" />
+        </TableRow>
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <EditText
+                android:id="@+id/hostname_field"
+                android:layout_height="wrap_content"
+                android:text="@string/hostname_default"
+                android:layout_width="0dp"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="textUri"
+                android:autoText="false">
+            </EditText>
+
+            <EditText
+                android:id="@+id/port_field"
+                android:layout_height="wrap_content"
+                android:text="@string/port_default"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="number"
+                android:layout_width="0dp">
+            </EditText>
+        </TableRow>
+
+    </TableLayout>
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/auth_block"
+        android:layout_below="@id/enter_info_block">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/auth_labels">
+            <TextView
+                android:id="@+id/auth_hostname_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/auth_hostname_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:alpha="0.5" />
+            <TextView
+                android:id="@+id/auth_port_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/auth_port_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:alpha="0.5" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/auth_fields">
+            <EditText
+                android:id="@+id/auth_hostname_field"
+                android:layout_height="wrap_content"
+                android:text="@string/auth_hostname_default"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="text"
+                android:layout_width="0dp"
+                android:enabled="false"
+                android:alpha="0.5" />
+            <EditText
+                android:id="@+id/auth_port_field"
+                android:layout_height="wrap_content"
+                android:text="@string/auth_port_default"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="number"
+                android:layout_width="0dp"
+                android:enabled="false"
+                android:alpha="0.5" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/auth_credentials_labels">
+            <TextView
+                android:id="@+id/username_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/username_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:alpha="0.5" />
+
+            <TextView
+                android:id="@+id/password_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/password_label"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:alpha="0.5" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/auth_credentials">
+            <EditText
+                android:id="@+id/username_field"
+                android:layout_height="wrap_content"
+                android:text="@string/username_default"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="text"
+                android:layout_width="0dp"
+                android:enabled="false"
+                android:alpha="0.5" />
+            <EditText
+                android:id="@+id/password_field"
+                android:layout_height="wrap_content"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1"
+                android:inputType="textPassword"
+                android:layout_width="0dp"
+                android:enabled="false"
+                android:alpha="0.5" />
+        </TableRow>
+
+    </TableLayout>
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/radio_block"
+        android:layout_below="@id/auth_block">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/radioGroup">
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mp_label"
+                    android:id="@+id/mpRadioButton"
+                    android:textColor="#4D4D4D" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mpbv_label"
+                    android:id="@+id/mpBVRadioButton"
+                    android:textColor="#4D4D4D" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/mpPostingRadioButton"
+                    android:text="@string/mp_posting_label"
+                    android:textColor="#4D4D4D" />
+            </RadioGroup>
+        </TableRow>
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/authentication_label"
+                android:id="@+id/authentication_check_box"
+                android:textColor="#4D4D4D" />
+        </TableRow>
+    </TableLayout>
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/output_block"
+        android:layout_below="@id/radio_block"
+        android:layout_above="@+id/button_block">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/messages_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/messages_label"
+                android:textColor="#4D4D4D" />
+        </TableRow>
+
+        <ScrollView
+            android:id="@+id/scroller_id"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:scrollbars="vertical"
+            android:fillViewport="true">
+            <TextView
+                android:id="@+id/maintextview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="12dp"
+                android:textColor="#4D4D4D" />
+        </ScrollView>
+    </TableLayout>
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@id/button_block"
+        android:layout_alignParentBottom="true">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_label"
+                android:id="@+id/button"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/close_button_label"
+                android:id="@+id/close_button"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/clear_button_label"
+                android:id="@+id/clear_button"
+                android:textColor="#4D4D4D"
+                android:layout_weight="1" />
+        </TableRow>
+    </TableLayout>
+</RelativeLayout>
