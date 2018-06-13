@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project  xmlns:ivy="antlib:org.apache.ivy.ant" basedir="." default="build">
+
+<!-- Output directory for examples -->
+<property name="bin.dir" value="bin"/>
+
+<!-- Set classpath to the downloaded libraries and output folder -->
+<path id="classpath">
+	<fileset dir="lib" includes="*.jar">
+		<exclude name="*javadoc*"/>
+		<exclude name="*sources*"/>
+	</fileset>
+	<pathelement location="${bin.dir}"/>
+</path>
+
+<!-- Clean examples directory -->
+<target name="clean">
+	<delete dir="${bin.dir}"/>
+</target>
+
+<!-- Download dependent libraries (websocket, json, etc.) using Ivy -->
+<target name="build-dep" description="Retrieve dependent libraries">
+	<ivy:retrieve />
+</target>
+
+<!-- Build examples -->
+<target name="build" depends="build-dep">
+
+	<mkdir dir="${bin.dir}"/>
+	<javac sourcepath="" srcdir="." destdir="${bin.dir}">
+		<classpath refid="classpath"/>
+		<include name="*.java"/>
+	</javac>
+
+	<!-- When finished, print classpath for convenience -->
+	<pathconvert property="classpathProperty" refid="classpath">
+		<map from="${basedir}/" to=""/>
+	</pathconvert>
+	<echo>Classpath is: ${classpathProperty}</echo>
+
+</target>
+</project>

@@ -31,14 +31,14 @@ token over its WebSocket to the Elektron Real-Time Service.
 3. __Run examples__
     - `cd` to `Applications/Examples/EDP/python`
     - To run `market_price_edpgw_authentication.py` with options:
-      - `python market_price_edpgw_authentication.py --auth_hostname <Gateway host> --user <username> --password <password> --hostname <Elektron Real-Time Service host>`
+      - `python market_price_edpgw_authentication.py --user <username> --password <password> --hostname <Elektron Real-Time Service host>`
 	  - Pressing the CTRL+C buttons terminates the example.
 
 ### Commandline Option Descriptions
 
 Option           |Description|
 ----------------:|-----------|
-`--auth_hostname`| REQUIRED. Hostname of the EDP Gateway.
+`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
 `--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
 `--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
 `--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
