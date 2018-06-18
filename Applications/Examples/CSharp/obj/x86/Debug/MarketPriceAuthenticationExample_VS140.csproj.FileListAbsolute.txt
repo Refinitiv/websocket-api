@@ -1,1 +1,0 @@
-C:\projects\simplifiedstreaming\streamingtools\Applications\Examples\CSharp\Debug_WIN_VS140\MarketPriceAuthenticationExample.exe.config
