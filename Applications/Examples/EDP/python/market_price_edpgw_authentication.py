@@ -1,15 +1,14 @@
+#!/usr/bin/env python
 #|-----------------------------------------------------------------------------
 #|            This source code is provided under the Apache 2.0 license      --
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 #|                See the project's LICENSE.md for details.                  --
 #|           Copyright Thomson Reuters 2018. All rights reserved.            --
 #|-----------------------------------------------------------------------------
-
-#!/usr/bin/env python
 """ 
 Simple example of authenticating to EDP-GW and using the token to login and
-retrieve MarketPrice content.  A username, password, and client ID are used to
-retrieve this token. The Client ID must be requested from Thomson Reuters.
+retrieve MarketPrice content.  A username and password are used to retrieve
+this token.
 """
 
 import sys
@@ -35,7 +34,7 @@ user = ''
 port = '443'
 client_secret = ''
 scope = 'trapi'
-ric = 'TRI.N'
+ric = '/TRI.N'
 
 # Global Variables
 web_socket_app = None

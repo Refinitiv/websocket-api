@@ -1,24 +1,27 @@
-# Java Elektron Real-Time Example
+# Java Elektron Real-Time Examples
 ## Summary
 
-This example demonstrates authenticating via the Elektron Real-Time Service and
-Elektron Data Platform Gateway, and logging in with the retrieved token to
-retrieve market content.
+These examples demonstrate authenticating via the Elektron Real-Time (ERT)
+Service and Elektron Data Platform (EDP) Gateway, and consuming market content.
 
-The example first sends an HTTP request to the EDP Gateway, using the specified
-username and password. The Gateway provides an authentication token in
-response.
+The MarketPriceEdpGwAuthentication example demonstrates authenticating via an
+HTTPS request to the EDP-RT Gateway using a username and password. It then
+opens a WebSocket to the ERT service using the specified hostname, logs in with
+the retrieved token, and requests market content.
 
-The example then opens a WebSocket to the Elektron Real-Time Service at the
-specified host, logs in using the authentication token, then retrieves market
-content.
+The MarketPriceEdpGwServiceDiscovery example demonstrates authenticating via an
+HTTPS request to the EDP Gateway using a username and password, and discovering
+endpoints of the EDP-RT service via an HTTPS request to EDP-RT Service
+Discovery.  The example then opens a WebSocket to an endpoint (or optionally
+two endpoints, if the --hotstandby option is used), logs in with the retrieved
+token, and requests market content.
 
-The example periodically retrieves new authentication tokens, using a refresh
+The examples periodically retrieve new authentication tokens, using a refresh
 token included in the response from the Gateway instead of the username and
-password. Once the new token is retrieved, it sends a login request with this
-token over its WebSocket to the Elektron Real-Time Service.
+password. Once the new token is retrieved, they send a login request with this
+token over their WebSockets to the ERT Service.
 
-## Setup and Run Example
+## Setup
 ### Windows
 1. __Install Ant/Ivy__
     - Install __Ant__
@@ -30,14 +33,9 @@ token over its WebSocket to the Elektron Real-Time Service.
 2. __Build__
     - Run:
 	    -  `ant`
-	- Ant should download the dependent libraries via Ivy, and compile the example.
+	- Ant should download the dependent libraries via Ivy, and compile the examples.
     - NOTE: When finished, the build conveniently prints a classpath for use when running the 
       examples.
-3. __Running The Example__
-    - Set the classpath that Ant gave you and run:
-    - `set CLASSPATH=<classpath from ant>`
-    - `java MarketPriceEdpGwAuthentication --user <username> --password <password> --hostname <Elektron Real-Time Service host>`
-    - Pressing the CTRL+C buttons terminates the example.
 
 ### RedHat/Oracle Linux
 1. __Install Ant/Ivy via Yum__
@@ -54,29 +52,57 @@ token over its WebSocket to the Elektron Real-Time Service.
     - Ant should download the dependent libraries via Ivy, and compile the examples.
     - NOTE: When finished, the build conveniently prints a classpath for use when running the 
       examples.
-3. __Running The Example__
-    - Set the classpath that Ant gave you and run:
-    - `export CLASSPATH=<classpath from ant>`
-    - `java MarketPriceEdpGwAuthentication --user <username> --password <password> --hostname <Elektron Real-Time Service host>`
-    - Pressing the CTRL+C buttons terminates the example.
 
-### Commandline Option Descriptions
+## Running the Examples
+
+### Running the MarketPriceEdpGwAuthentication Example
+
+To run the example:
+  - Set the classpath that Ant gave you: 
+	- `set CLASSPATH=<classpath from ant>` (Windows)
+    - `export CLASSPATH=<classpath from ant>` (Linux)
+  - Run: `java MarketPriceEdpGwAuthentication --user <username> --password <password> --hostname <Elektron Real-Time Service host>`
+  - Pressing the CTRL+C buttons terminates the example.
+
+The command line options are:
 
 Option           |Description|
 ----------------:|-----------|
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
-`--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
 `--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
+`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
+`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
+`--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, TRI.N is requested.
+`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
 `--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
+### Running the MarketPriceEdpGwServiceDiscovery Example
+
+To run the example:
+  - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
+  - Run: `java MarketPriceEdpGwServiceDiscovery --user <username> --password <password>`
+  - Pressing the CTRL+C buttons terminates the example.
+
+The command line options are:
+
+Option           |Description|
+----------------:|-----------|
+`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--hotstandby`   | OPTIONAL. Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
+`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
+`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
+`--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
+`--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
 ## Source File Description
 
 * `MarketPriceEdpGwAuthentication.java` - Source file for the MarketPriceEdpGwAuthentication example.
+
+* `MarketPriceEdpGwServiceDiscovery.java` - Source file for the MarketPriceEdpGwServiceDiscovery example.
 

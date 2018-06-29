@@ -53,7 +53,7 @@ public class MarketPriceEdpGwAuthentication {
     public static String password = "";
 	public static String authHostname = "api.edp.thomsonreuters.com";
     public static String authPort = "443";
-    public static String ric = "TRI.N";
+    public static String ric = "/TRI.N";
     public static String scope = "trapi";
     public static JSONObject authJson = null;
 
