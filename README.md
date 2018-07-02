@@ -25,9 +25,9 @@ The Examples are found under the Applications/Examples folder. Examples are prov
 
 More details for each example are included in a __README.md__ file in its respective folder.
 
-## EDP Example
+## EDP Examples
 
-A Python example that demonstrates consuming content from the Elektron Real-Time Service is in `Applications/Examples/EDP/python`. More details are included in a __README.md__ file the example folder.
+Examples in Python and Java that demonstrate consuming content from the Elektron Real-Time Service are in `Applications/Examples/EDP/python` and `Applications/Examples/EDP/java`. More details are included in a __README.md__ file in each example folder.
 
 # Contributing
 In the event you would like to contribute to this repository, it is required that you read and sign the following:
