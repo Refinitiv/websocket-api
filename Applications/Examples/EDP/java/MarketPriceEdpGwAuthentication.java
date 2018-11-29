@@ -61,12 +61,12 @@ public class MarketPriceEdpGwAuthentication {
 		
 		Options options = new Options();
 		
-        options.addOption(Option.builder().longOpt("hostname").hasArg().desc("hostname").build());
+        options.addOption(Option.builder().longOpt("hostname").required().hasArg().desc("hostname").build());
         options.addOption(Option.builder().longOpt("port").hasArg().desc("port").build());
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
-        options.addOption(Option.builder().longOpt("user").hasArg().desc("user").build());
+        options.addOption(Option.builder().longOpt("user").required().hasArg().desc("user").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
-        options.addOption(Option.builder().longOpt("password").hasArg().desc("password").build());
+        options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
 		options.addOption(Option.builder().longOpt("auth_hostname").hasArg().desc("auth_hostname").build());
         options.addOption(Option.builder().longOpt("auth_port").hasArg().desc("auth_port").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());

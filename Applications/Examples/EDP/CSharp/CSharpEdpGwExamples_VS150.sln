@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketPriceEdpGwAuthenticationExample", "MarketPriceEdpGwAuthenticationExample\MarketPriceEdpGwAuthenticationExample.csproj", "{FA17606B-7507-4349-8A73-6AEB716FEB28}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketPriceEdpGwServiceDiscoveryExample", "MarketPriceEdpGwServiceDiscoveryExample\MarketPriceEdpGwServiceDiscoveryExample.csproj", "{8640DAA5-F3A9-4C13-9E1F-9541C88A153A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA17606B-7507-4349-8A73-6AEB716FEB28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA17606B-7507-4349-8A73-6AEB716FEB28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA17606B-7507-4349-8A73-6AEB716FEB28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA17606B-7507-4349-8A73-6AEB716FEB28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8640DAA5-F3A9-4C13-9E1F-9541C88A153A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8640DAA5-F3A9-4C13-9E1F-9541C88A153A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8640DAA5-F3A9-4C13-9E1F-9541C88A153A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8640DAA5-F3A9-4C13-9E1F-9541C88A153A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {09047DFB-9CD3-49AA-98A3-F38324023B01}
+	EndGlobalSection
+EndGlobal

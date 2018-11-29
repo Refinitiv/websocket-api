@@ -25,7 +25,7 @@ app_id = '256'
 auth_hostname = 'api.edp.thomsonreuters.com'
 auth_port = '443'
 auth_path = 'auth/oauth2/beta1/token'
-hostname = '127.0.0.1'
+hostname = ''
 password = ''
 position = ''
 sts_token = ''
@@ -42,7 +42,7 @@ web_socket_open = False
 logged_in = False
 
 
-def process_message(ws, message_json):
+def process_message(message_json):
     """ Parse at high level and output JSON of message """
     message_type = message_json['Type']
 
@@ -50,15 +50,15 @@ def process_message(ws, message_json):
         if 'Domain' in message_json:
             message_domain = message_json['Domain']
             if message_domain == "Login":
-                process_login_response(ws, message_json)
+                process_login_response(message_json)
     elif message_type == "Ping":
         pong_json = {'Type': 'Pong'}
-        ws.send(json.dumps(pong_json))
+        web_socket_app.send(json.dumps(pong_json))
         print("SENT:")
         print(json.dumps(pong_json, sort_keys=True, indent=2, separators=(',', ':')))
 
 
-def process_login_response(ws, message_json):
+def process_login_response(message_json):
     """ Send item request """
     global logged_in
 
@@ -67,10 +67,10 @@ def process_login_response(ws, message_json):
         sys.exit(1)
 
     logged_in = True
-    send_market_price_request(ws, ric)
+    send_market_price_request(ric)
 
 
-def send_market_price_request(ws, ric_name):
+def send_market_price_request(ric_name):
     """ Create and send simple Market Price request """
     mp_req_json = {
         'ID': 2,
@@ -78,12 +78,12 @@ def send_market_price_request(ws, ric_name):
             'Name': ric_name,
         },
     }
-    ws.send(json.dumps(mp_req_json))
+    web_socket_app.send(json.dumps(mp_req_json))
     print("SENT:")
     print(json.dumps(mp_req_json, sort_keys=True, indent=2, separators=(',', ':')))
 
 
-def send_login_request(ws, auth_token, is_refresh_token):
+def send_login_request(auth_token, is_refresh_token):
     """ 
         Send login request with authentication token.
         Used both for the initial login and subsequent reissues to update the authentication token
@@ -109,19 +109,19 @@ def send_login_request(ws, auth_token, is_refresh_token):
     if is_refresh_token:
         login_json['Refresh'] = False
         
-    ws.send(json.dumps(login_json))
+    web_socket_app.send(json.dumps(login_json))
     print("SENT:")
     print(json.dumps(login_json, sort_keys=True, indent=2, separators=(',', ':')))
 
 
-def on_message(ws, message):
+def on_message(_, message):
     """ Called when message received, parse message into JSON for processing """
     print("RECEIVED: ")
     message_json = json.loads(message)
     print(json.dumps(message_json, sort_keys=True, indent=2, separators=(',', ':')))
 
     for singleMsg in message_json:
-        process_message(ws, singleMsg)
+        process_message(singleMsg)
 
 
 def on_error(_, error):
@@ -136,13 +136,13 @@ def on_close(_):
     print("WebSocket Closed")
 
 
-def on_open(ws):
+def on_open(_):
     """ Called when handshake is complete and websocket is open, send login """
 
     print("WebSocket successfully connected!")
     global web_socket_open
     web_socket_open = True
-    send_login_request(ws, sts_token, False)
+    send_login_request(sts_token, False)
 
 
 def get_sts_token(current_refresh_token):
@@ -227,6 +227,10 @@ if __name__ == "__main__":
         elif opt in "--ric":
             ric = arg
 
+    if user == '' or password == '' or  hostname == '':
+        print("user, password, and hostname are required options")
+        sys.exit(2)
+
     if position == '':
         # Populate position if possible
         try:
@@ -266,6 +270,6 @@ if __name__ == "__main__":
 
             # Update token.
             if logged_in:
-                send_login_request(web_socket_app, sts_token, True)
+                send_login_request(sts_token, True)
     except KeyboardInterrupt:
         web_socket_app.close()

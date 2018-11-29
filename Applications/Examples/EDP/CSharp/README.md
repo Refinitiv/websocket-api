@@ -20,18 +20,14 @@ are not intended to be used for measuring performance.
 
 ## Compiling Source
 ### Windows
-- Project files are included for Visual Studio 2012, 2013, and 2015. To compile the examples,
-open the appropriate solution file and build it.
+- Project files are included for Visual Studio 2017. To compile the examples, open the solution
+file and build it.
 
-- This project uses WebSocketSharp to handle the WebSocket protocol, and JSON.NET to read
-JSON messages. Both packages are retrieved via Visual Studio's NuGet extension; if enabled,
-they will be downloaded automatically when the build is run.
-
-- Note: Visual Studio 2012 may require updating its NuGet extension in order to download these 
-packages.
+- This project uses Newtonsoft.Json to read JSON messages. The package is retrieved via Visual
+Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ## Command Line Usage
-```MarketPriceEdpGwAuthenticationExample.exe [--appID appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user]```
+```dotnet MarketPriceEdpGwAuthenticationExample.dll [--appID appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user]```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -50,11 +46,10 @@ Option           |Description|
 
 ## Source File Description
 * `MarketPriceEdpGwAuthenticationExample.cs` - Source file for the MarketPriceEdpGwAuthentication example.
-* `MarketPriceEdpGwAuthenticationExample_VS140.csproj` - visual studio project
-
+* `MarketPriceEdpGwAuthenticationExample.csproj` - visual studio project
 
 ## Command Line Usage
-```MarketPriceEdpGwServiceDiscoveryExample.exe [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--ric ric] [--scope scope] [--user user]```
+```dotnet MarketPriceEdpGwServiceDiscoveryExample.dll [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--ric ric] [--scope scope] [--user user]```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -67,9 +62,10 @@ Option           |Description|
 `--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
 `--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
 `--hotstandby`   | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
+`--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
 `--ric`          | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`        | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 
 ## Source File Description
 * `MarketPriceEdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceEdpGwServiceDiscovery example.
-* `MarketPriceEdpGwServiceDiscoveryExample_VS140.csproj` - visual studio project
+* `MarketPriceEdpGwServiceDiscoveryExample.csproj` - visual studio project

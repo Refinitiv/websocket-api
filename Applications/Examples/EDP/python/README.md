@@ -31,6 +31,7 @@ token over their WebSockets to the ERT Service.
     - Run (in order):
       - `pip install requests`
       - `pip install websocket-client`
+	  **The websocket-client must be version 0.49 or greater**
 
 ## Running the Examples
 
@@ -71,6 +72,7 @@ Option           |Description|
 `--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
 `--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
 `--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
 `--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
 `--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.

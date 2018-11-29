@@ -66,6 +66,7 @@ public class MarketPriceEdpGwServiceDiscovery {
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
     public static boolean hotstandby = false;
+    public static String region = "amer";
     public static String discoveryPath = "/streaming/pricing/v1/";
 
     /**
@@ -305,14 +306,15 @@ public class MarketPriceEdpGwServiceDiscovery {
 		
         options.addOption(Option.builder().longOpt("port").hasArg().desc("port").build());
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
-        options.addOption(Option.builder().longOpt("user").hasArg().desc("user").build());
+        options.addOption(Option.builder().longOpt("user").required().hasArg().desc("user").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
-        options.addOption(Option.builder().longOpt("password").hasArg().desc("password").build());
+        options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
 		options.addOption(Option.builder().longOpt("auth_hostname").hasArg().desc("auth_hostname").build());
         options.addOption(Option.builder().longOpt("auth_port").hasArg().desc("auth_port").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());
         options.addOption(Option.builder().longOpt("scope").hasArg().desc("scope").build());
         options.addOption(Option.builder().longOpt("hotstandby").desc("hotstandby").build());
+        options.addOption(Option.builder().longOpt("region").hasArg().desc("region").build());
         options.addOption(Option.builder().longOpt("help").desc("help").build());
 
         CommandLineParser parser = new DefaultParser();
@@ -364,7 +366,16 @@ public class MarketPriceEdpGwServiceDiscovery {
         	scope = cmd.getOptionValue("scope");
         if(cmd.hasOption("hotstandby"))
         	hotstandby = true;
-		
+        if(cmd.hasOption("region"))
+        {
+            region = cmd.getOptionValue("region");
+            if(!region.equals("amer") && !region.equals("emea"))
+            {
+                System.out.println("Unknown region \"" + region + "\". The region must be either \"amer\" or \"emea\".");
+                System.exit(1);
+            }
+        }
+
         try {
 
             // Connect to the gateway and authenticate (using our username and password)
@@ -376,7 +387,7 @@ public class MarketPriceEdpGwServiceDiscovery {
             serviceJson = queryServiceDiscovery();
             if (serviceJson == null)
             	System.exit(1);
-
+			
             // Create a host list based on the retrieved service information.
             // If failing over on disconnect, get an endpoint with two locations.
             // If opening multiple connections, get all endpoints that are in one location.
@@ -384,6 +395,17 @@ public class MarketPriceEdpGwServiceDiscovery {
             for (int i = 0; i < endpointArray.length(); ++i)
             {
                 JSONObject endpoint = endpointArray.getJSONObject(i);
+
+                if(region.equals("amer"))
+                {
+                    if ( endpoint.getJSONArray("location").getString(0).startsWith("us-") == false )
+                        continue;
+                }
+                else if(region.equals("emea"))
+                {
+                    if ( endpoint.getJSONArray("location").getString(0).startsWith("eu-") == false )
+                        continue;
+                }
 
                 if (!hotstandby)
                 {
@@ -402,16 +424,22 @@ public class MarketPriceEdpGwServiceDiscovery {
 
             // Determine when the access token expires. We will re-authenticate before then.
             int expireTime = Integer.parseInt(authJson.getString("expires_in"));
-			
-            if (hostList.size() < 1)
+
+            if(hotstandby)
             {
-                System.out.println("Error: No endpoints in response.");
-                System.exit(1);
+                if(hostList.size() < 2)
+                {
+                    System.out.println("Error: Expected 2 hosts but received " + hostList.size());
+                    System.exit(1);
+                }
             }
-            else if (hotstandby && hostList.size() < 2)
+            else
             {
-                System.out.println("Error: Expected 2 hosts but received " + hostList.size());
-                System.exit(1);
+                if (hostList.size() == 0)
+                {
+                    System.out.println("Error: No endpoints in response.");
+                    System.exit(1);
+                }
             }
             
             // Connect WebSocket(s).

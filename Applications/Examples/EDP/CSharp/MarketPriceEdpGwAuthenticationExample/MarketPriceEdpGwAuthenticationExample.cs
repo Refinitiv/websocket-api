@@ -5,32 +5,22 @@
 //|           Copyright Thomson Reuters 2018. All rights reserved.            --
 //|-----------------------------------------------------------------------------
 
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
-using WebSocketSharp;
-
-/*
- * This example demonstrates retrieving JSON-formatted market content from a WebSocket server,
- * using a token retrieved from an authentication service.
- * It performs the following steps:
- * - Sends an HTTP request to the authentication server and retrives a token.
- * - Connects to the WebSocket server using the authentication token.
- * - Requests TRI.N market-price content.
- * - Prints the response content.
- */
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MarketPriceEdpGwAuthenticationExample
 {
     class MarketPriceEdpGwAuthenticationExample
     {
         /// <summary>The websocket used for retrieving market content.</summary>
-        private WebSocket _webSocket;
+        private ClientWebSocket _webSocket;
 
         /// <summary>Indicates whether we have successfully logged in.</summary>
         private bool _loggedIn = false;
@@ -45,8 +35,8 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>The configured port used when opening the WebSocket.</summary>
         private string _port = "443";
 
-        /// <summary>The configured hostname of the authentication server. If not specified, the same hostname as
-        /// as the WebSocket server is used.</summary>
+        /// <summary>The configured hostname of the authentication server. If not specified, 
+        /// the same hostname as the WebSocket server is used.</summary>
         private string _authHostName = "api.edp.thomsonreuters.com";
 
         /// <summary>The configured port used when requesting from the authentication server.</summary>
@@ -73,24 +63,28 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
         private int _expirationInMilliSeconds = Timeout.Infinite;
 
-        /// <summary>Parses commandline config and runs the application.</summary>
+        /// <summary> Specifies buffer size for each read from WebSocket.</summary>
+        private static readonly int BUFFER_SIZE = 8192;
+
+        /// <summary> This is used to cancel operations when something goes wrong. </summary>
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+
         static void Main(string[] args)
         {
             MarketPriceEdpGwAuthenticationExample example = new MarketPriceEdpGwAuthenticationExample();
-            example.parseCommandLine(args);
-            example.run();
-            Console.WriteLine("done");
+            example.ParseCommandLine(args);
+            example.Run();
         }
 
-        /* Send an HTTP request to the specified authentication server, containing our username and password.
-         * The token will be used to login on the websocket.  */
-        public bool getAuthenticationInfo(bool isRefresh)
+        /// <summary> Send an HTTP request to the specified authentication server, containing our username and password.
+        /// The token will be used to login on the websocket. </summary>
+        /// <returns><c>true</c> if success otherwise <c>false</c></returns>
+        public bool GetAuthenticationInfo(bool isRefresh)
         {
             string url = "https://" + _authHostName + ":" + _authPort + "/auth/oauth2/beta1/token";
-            Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}\n", isRefresh, url);
+            Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}", isRefresh, url);
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
-            webRequest.UserAgent = "CSharpMarketPriceEdpGwAuthenticationExample";
             try
             {
                 /* Send username and password in request. */
@@ -98,7 +92,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 if (isRefresh)
                     postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
                 else
-                    postString += "&scope=" + _scope + "&grant_type=password&password=" + _password;
+                    postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
 
                 byte[] postContent = Encoding.ASCII.GetBytes(postString);
                 webRequest.Method = "POST";
@@ -108,12 +102,11 @@ namespace MarketPriceEdpGwAuthenticationExample
                 System.IO.Stream requestStream = webRequest.GetRequestStream();
                 requestStream.Write(postContent, 0, postContent.Length);
                 requestStream.Close();
-                Console.WriteLine(webRequest.Headers.ToString());
-                Console.WriteLine(postString);
 
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || 
+                    webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
@@ -140,46 +133,163 @@ namespace MarketPriceEdpGwAuthenticationExample
             return false;
         }
 
-        /// <summary>Runs the application. Retrives a token from the authentication server, then opens the WebSocket using the token.</summary>
-        public void run()
+        /// <summary>Runs the application. Retrives a token from the authentication server, then opens
+        /// the WebSocket using the token.</summary>
+        public void Run()
         {
             /* Get local hostname. */
             IPAddress hostEntry = Array.Find(Dns.GetHostEntry(Dns.GetHostName()).AddressList, ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-            _position = (hostEntry == null) ? "127.0.0.1" : hostEntry.ToString();
-
-            if (!getAuthenticationInfo(false))
-                Environment.Exit(1);
+            _position = (hostEntry == null) ? "127.0.0.1/net" : hostEntry.ToString();
 
             /* Open a websocket. */
-            string hostString = "wss://" + _hostName + ":" + _port + "/WebSocket";
-            Console.WriteLine("Connecting to WebSocket " + hostString + " ...");
-            _webSocket = new WebSocket(hostString, "tr_json2");
+            Uri uri = new Uri("wss://" + _hostName + ":" + _port + "/WebSocket");
+            Console.WriteLine("Connecting to WebSocket " + uri.AbsoluteUri + " ...");
 
-            _webSocket.OnOpen += onWebSocketOpened;
-            _webSocket.OnError += onWebSocketError;
-            _webSocket.OnClose += onWebSocketClosed;
-            _webSocket.OnMessage += onWebSocketMessage;
+            if (!GetAuthenticationInfo(false))
+                Environment.Exit(1);
 
-            /* Print any log events (similar to default behavior, but we explicitly indicate it's a logger event). */
-            _webSocket.Log.Output = (logData, text) => Console.WriteLine("Received Log Event (Level: {0}): {1}\n", logData.Level, logData.Message);
+            _webSocket = new ClientWebSocket();
+            _webSocket.Options.SetBuffer(BUFFER_SIZE, BUFFER_SIZE);
+            _webSocket.Options.AddSubProtocol("tr_json2");
 
-            _webSocket.Connect();
+            Console.CancelKeyPress += Console_CancelKeyPress;
 
-            while (true)
+            try
             {
-                Thread.Sleep((int)(_expirationInMilliSeconds * .90));
-                if (_loggedIn)
+                _webSocket.ConnectAsync(uri, CancellationToken.None).Wait();
+
+                if (_webSocket.State == WebSocketState.Open)
                 {
-                    // refresh authentication token; if refresh attempt fails, try full auth
-                    if (!getAuthenticationInfo(true))
-                        if (!getAuthenticationInfo(false))
-                            Environment.Exit(1);
-                    sendLogin(true);
+                    SendLogin(false);
+
+                    /* Run a take to read messages */
+                    Task.Factory.StartNew(() =>
+                    {
+                        while (_webSocket.State == WebSocketState.Open)
+                        {
+                            try
+                            {
+                                ReceiveMessage();
+                            }
+                            catch (System.AggregateException)
+                            {
+                                System.Console.WriteLine("The WebSocket connection is closed");
+                                Console_CancelKeyPress(null, null);
+                            }
+                        }
+                    });
+
+                    while (true)
+                    {
+                        Thread.Sleep((int)(_expirationInMilliSeconds * .90));
+                        if (_loggedIn)
+                        {
+                            // refresh authentication token; if refresh attempt fails, try full auth
+                            if (!GetAuthenticationInfo(true))
+                                if (!GetAuthenticationInfo(false))
+                                    Environment.Exit(1);
+                            SendLogin(true);
+                        }
+
+                        if (_webSocket.State == WebSocketState.Aborted)
+                        {
+                            System.Console.WriteLine("The WebSocket connection is closed");
+                            Console_CancelKeyPress(null, null);
+                            break;
+                        }
+                    }
                 }
+                else
+                {
+                    System.Console.WriteLine("Failed to open a WebSocket connection");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex);
+            }
+            finally
+            {
+                Console_CancelKeyPress(this, null);
             }
         }
 
-        private void sendLogin(bool isRefresh)
+        /// <summary>
+        /// Handles Ctrl + C or exits the application.
+        /// </summary>
+        /// <param name="sender">The caller of this method</param>
+        /// <param name="e">The <c>ConsoleCancelEventArgs</c> if any</param>
+        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+           if (_webSocket != null)
+           {
+                if (_webSocket.State == WebSocketState.Open)
+                {
+                    Console.WriteLine("The WebSocket connection is closed");
+                    _cts.Cancel();
+                    _webSocket.Dispose();
+                }
+           }
+           Environment.Exit(0);
+        }
+
+        /// <summary>Reads data from the WebSocket and parses to JSON message</summary>
+        private void ReceiveMessage()
+        {
+            var readBuffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
+            MemoryStream memoryStream = null;
+            byte[] dataBuffer;
+
+            while (true)
+            { 
+                var result = _webSocket.ReceiveAsync(readBuffer, _cts.Token);
+
+                if (result.IsFaulted)
+                {
+                    Console.WriteLine("Read message failed " + result.Exception.Message);
+                    Console_CancelKeyPress(this, null);
+                }
+                else
+                {
+                    if (!result.Result.EndOfMessage)
+                    {
+                        if (memoryStream == null) memoryStream = new MemoryStream(BUFFER_SIZE * 5);
+
+                        memoryStream.Write(readBuffer.Array, readBuffer.Offset, readBuffer.Count);
+                        readBuffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
+                    }
+                    else
+                    {
+                        if (memoryStream != null)
+                        {
+                            memoryStream.Write(readBuffer.Array, readBuffer.Offset, readBuffer.Count);
+                            dataBuffer = memoryStream.GetBuffer();
+                            memoryStream.Dispose();
+                        }
+                        else
+                        {
+                            dataBuffer = readBuffer.Array;
+                        }
+
+                        break;
+                    }
+                }
+            };
+
+            /* Received message(s). */
+            JArray messages = JArray.Parse(Encoding.ASCII.GetString(dataBuffer));
+            /* Print the message (format the object string for easier reading). */
+            Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(messages, Formatting.Indented));
+
+            for (int index = 0; index < messages.Count; ++index)
+                ProcessJsonMsg(messages[index]);
+        }
+
+        /// <summary>
+        /// Creates and sends a login message
+        /// </summary>
+        /// <param name="isRefresh">Setting <c>true</c> to not interest in the login refresh</param>
+        private void SendLogin(bool isRefresh)
         {
             string msg;
             msg = "{" + "\"ID\":1," + "\"Domain\":\"Login\"," + "\"Key\": {\"NameType\":\"AuthnToken\"," +
@@ -188,29 +298,7 @@ namespace MarketPriceEdpGwAuthenticationExample
             if (isRefresh)
                 msg += ",\"Refresh\": false";
             msg += "}";
-            sendMessage(msg);
-        }
-
-        /// <summary>Handles the initial open of the WebSocket.</summary>
-        private void onWebSocketOpened(object sender, EventArgs e)
-        {
-            Console.WriteLine("WebSocket successfully connected");
-
-            // create JSON string with token, app id, and position and send it over the web socket
-            sendLogin(false);
-        }
-
-        /// <summary>Handles messages received on the websocket.</summary>
-        private void onWebSocketMessage(object sender, MessageEventArgs e)
-        {
-            /* Received message(s). */
-            JArray messages = JArray.Parse(e.Data);
-
-            /* Print the message (format the object string for easier reading). */
-            Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(messages, Formatting.Indented));
-
-            for(int index = 0; index < messages.Count; ++index)
-                processJsonMsg(messages[index]);
+            SendMessage(msg);
         }
 
         /// <summary>
@@ -218,9 +306,9 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// opens a stream for price content.
         /// </summary>
         /// <param name="msg">The received JSON message</param>
-        void processJsonMsg(dynamic msg)
+        void ProcessJsonMsg(dynamic msg)
         {
-            switch((string)msg["Type"])
+            switch ((string)msg["Type"])
             {
                 case "Refresh":
                     if ((string)msg["Domain"] == "Login")
@@ -237,7 +325,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                             _loggedIn = true;
 
                             /* Request an item. */
-                            sendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\"}" + "}");
+                            SendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\"}" + "}");
                         }
                     }
                     break;
@@ -245,47 +333,33 @@ namespace MarketPriceEdpGwAuthenticationExample
                     if (msg["Domain"] != null && (string)msg["Domain"] == "Login" &&
                         msg["State"] != null && msg["State"]["Stream"] != null && (string)msg["State"]["Stream"] != "Open")
                     {
-                        Console.WriteLine("stream is no longer open (state is {0})", (string)msg["State"]["Stream"]);
+                        Console.WriteLine("Stream is no longer open (state is {0})", (string)msg["State"]["Stream"]);
                         Environment.Exit(1);
                     }
                     break;
                 case "Ping":
-                    sendMessage("{\"Type\":\"Pong\"}");
+                    SendMessage("{\"Type\":\"Pong\"}");
                     break;
                 default:
                     break;
             }
-
         }
 
         /// <summary>Prints the outbound message and sends it on the WebSocket.</summary>
         /// <param name="jsonMsg">Message to send</param>
-        void sendMessage(string jsonMsg)
+        void SendMessage(string jsonMsg)
         {
             /* Print the message (format the object string for easier reading). */
             Console.WriteLine("SENT:\n{0}\n", JsonConvert.SerializeObject(JsonConvert.DeserializeObject(jsonMsg), Formatting.Indented));
 
-            _webSocket.Send(jsonMsg);
-        }
-
-
-        /// <summary>Handles the WebSocket closing.</summary>
-        private void onWebSocketClosed(object sender, CloseEventArgs e)
-        {
-            Console.WriteLine("WebSocket was closed: {0}\n", e.Reason);
-            Environment.Exit(1);
-        }
-
-        /// <summary>Handles any error that occurs on the WebSocket.</summary>
-        private void onWebSocketError(object sender, ErrorEventArgs e)
-        {
-            Console.WriteLine("Received Error: {0}\n", e.Exception.ToString());
-            Environment.Exit(1);
+            var encoded = Encoding.ASCII.GetBytes(jsonMsg);
+            var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
+            _webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, _cts.Token).Wait();
         }
 
         /// <summary>Parses command-line arguments.</summary>
         /// <param name="args">Command-line arguments passed to the application.</param>
-        void parseCommandLine(string[] args)
+        void ParseCommandLine(string[] args)
         {
             for (int i = 0; i < args.Length; ++i)
             {
@@ -293,7 +367,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 if (i + 1 >= args.Length)
                 {
                     Console.WriteLine("{0} requires an argument.", args[i]);
-                    printCommandLineUsageAndExit();
+                    PrintCommandLineUsageAndExit();
                 }
                 switch (args[i])
                 {
@@ -326,30 +400,26 @@ namespace MarketPriceEdpGwAuthenticationExample
                         break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
-                        printCommandLineUsageAndExit();
+                        PrintCommandLineUsageAndExit();
                         break;
                 }
             }
 
             if (_userName == null || _password == null)
             {
-                Console.WriteLine("both password and user must be specified on the command line");
-                printCommandLineUsageAndExit();
+                Console.WriteLine("Both password and user must be specified on the command line");
+                PrintCommandLineUsageAndExit();
             }
 
             if (_hostName == null)
             {
                 Console.WriteLine("hostname must be specified on the command line");
-                printCommandLineUsageAndExit();
+                PrintCommandLineUsageAndExit();
             }
-
-            /* If authentication server host wasn't specified, use same host as websocket. */
-            if (_authHostName == null)
-                _authHostName = _hostName;
         }
 
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
-        void printCommandLineUsageAndExit()
+        void PrintCommandLineUsageAndExit()
         {
             Console.WriteLine("Usage: {0} [--app_id appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user]", System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(1);

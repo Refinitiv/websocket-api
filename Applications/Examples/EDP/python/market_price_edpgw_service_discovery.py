@@ -34,9 +34,9 @@ refresh_token = ''
 user = ''
 client_secret = ''
 scope = 'trapi'
+region = 'amer'
 ric = '/TRI.N'
-hostList = ['127.0.0.1', '127.0.0.1']
-portList = ['443', '443']
+hostList = []
 hotstandby = False
 # Global Variables
 session2 = None
@@ -48,15 +48,13 @@ class WebSocketSession:
     web_socket_app = None
     web_socket_open = False
     host = ''
-    port = ''
     disconnected_by_user = False
 
-    def __init__(self, name, host, port):
+    def __init__(self, name, host):
         self.session_name = name
         self.host = host
-        self.port = port
 
-    def _send_market_price_request(self, ws, ric_name):
+    def _send_market_price_request(self, ric_name):
         """ Create and send simple Market Price request """
         mp_req_json = {
             'ID': 2,
@@ -64,11 +62,11 @@ class WebSocketSession:
                 'Name': ric_name,
             },
         }
-        ws.send(json.dumps(mp_req_json))
+        self.web_socket_app.send(json.dumps(mp_req_json))
         print("SENT on " + self.session_name + ":")
         print(json.dumps(mp_req_json, sort_keys=True, indent=2, separators=(',', ':')))
 
-    def _send_login_request(self, ws, auth_token, is_refresh_token):
+    def _send_login_request(self, auth_token, is_refresh_token):
         """
             Send login request with authentication token.
             Used both for the initial login and subsequent reissues to update the authentication token
@@ -94,20 +92,20 @@ class WebSocketSession:
         if is_refresh_token:
             login_json['Refresh'] = False
 
-        ws.send(json.dumps(login_json))
+        self.web_socket_app.send(json.dumps(login_json))
         print("SENT on " + self.session_name + ":")
         print(json.dumps(login_json, sort_keys=True, indent=2, separators=(',', ':')))
 
-    def _process_login_response(self, ws, message_json):
+    def _process_login_response(self, message_json):
         """ Send item request """
         if message_json['State']['Stream'] != "Open" or message_json['State']['Data'] != "Ok":
             print("Login failed.")
             sys.exit(1)
 
         self.logged_in = True
-        self._send_market_price_request(ws, ric)
+        self._send_market_price_request(ric)
 
-    def _process_message(self, ws, message_json):
+    def _process_message(self, message_json):
         """ Parse at high level and output JSON of message """
         message_type = message_json['Type']
 
@@ -115,28 +113,28 @@ class WebSocketSession:
             if 'Domain' in message_json:
                 message_domain = message_json['Domain']
                 if message_domain == "Login":
-                    self._process_login_response(ws, message_json)
+                    self._process_login_response(message_json)
         elif message_type == "Ping":
             pong_json = {'Type': 'Pong'}
-            ws.send(json.dumps(pong_json))
+            self.web_socket_app.send(json.dumps(pong_json))
             print("SENT on " + self.session_name + ":")
             print(json.dumps(pong_json, sort_keys=True, indent=2, separators=(',', ':')))
 
     # Callback events from WebSocketApp
-    def _on_message(self, ws, message):
+    def _on_message(self, message):
         """ Called when message received, parse message into JSON for processing """
         print("RECEIVED on " + self.session_name + ":")
         message_json = json.loads(message)
         print(json.dumps(message_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         for singleMsg in message_json:
-            self._process_message(ws, singleMsg)
+            self._process_message(singleMsg)
 
     def _on_error(self, error):
         """ Called when websocket error has occurred """
         print(error + " for " + self.session_name)
 
-    def _on_close(self, _):
+    def _on_close(self):
         """ Called when websocket is closed """
         self.web_socket_open = False
         self.logged_in = False
@@ -147,17 +145,17 @@ class WebSocketSession:
             time.sleep(3)
             self.connect()
 
-    def _on_open(self, ws):
+    def _on_open(self):
         """ Called when handshake is complete and websocket is open, send login """
 
         print("WebSocket successfully connected for " + self.session_name + "!")
         self.web_socket_open = True
-        self._send_login_request(ws, sts_token, False)
+        self._send_login_request(sts_token, False)
 
     # Operations
     def connect(self):
         # Start websocket handshake
-        ws_address = "wss://{}:{}/WebSocket".format(self.host, self.port)
+        ws_address = "wss://{}/WebSocket".format(self.host)
         print("Connecting to WebSocket " + ws_address + " for " + self.session_name + "...")
         self.web_socket_app = websocket.WebSocketApp(ws_address, on_message=self._on_message,
                                                      on_error=self._on_error,
@@ -178,7 +176,7 @@ class WebSocketSession:
     def refresh_token(self):
         if self.logged_in:
             print("Refreshing the access token for " + self.session_name)
-            self._send_login_request(self.web_socket_app, sts_token, True)
+            self._send_login_request(sts_token, True)
 
 
 def query_service_discovery():
@@ -202,18 +200,34 @@ def query_service_discovery():
     print("EDP-GW Service discovery succeeded. RECEIVED:")
     print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
 
-    count = 0
     for index in range(len(response_json['services'])):
+
+        if region == "amer":
+            if not response_json['services'][index]['location'][0].startswith("us-"):
+                continue
+        elif region == "emea":
+            if not response_json['services'][index]['location'][0].startswith("eu-"):
+                continue
+
         if not hotstandby:
             if len(response_json['services'][index]['location']) == 2:
-                hostList[count] = response_json['services'][index]['endpoint']
-                portList[count] = response_json['services'][index]['port']
+                hostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                str(response_json['services'][index]['port']))
                 break
         else:
             if len(response_json['services'][index]['location']) == 1:
-                hostList[count] = response_json['services'][index]['endpoint']
-                portList[count] = response_json['services'][index]['port']
-                count = count + 1
+                hostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                str(response_json['services'][index]['port']))
+
+    if hotstandby:
+        if len(hostList) < 2:
+            print("hotstandby support requires at least two hosts")
+            sys.exit(1)
+    else:
+        if len(hostList) == 0:
+            print("No host found from EDP service discovery")
+            sys.exit(1)
+
     return True
 
 
@@ -260,24 +274,26 @@ def get_sts_token(current_refresh_token):
     return auth_json['access_token'], auth_json['refresh_token'], auth_json['expires_in']
 
 
+def print_commandline_usage_and_exit(exit_code):
+    print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
+          '[--user user] [--password password] [--position position] [--auth_hostname auth_hostname] '
+          '[--auth_port auth_port] [--scope scope] [--region region] [--ric ric] [--hotstandby]'
+          ' [--help]')
+    sys.exit(exit_code)
+
+
 if __name__ == "__main__":
     # Get command line parameters
+    opts = []
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "app_id=", "user=", "password=",
                                                       "position=", "auth_hostname=", "auth_port=", "scope=",
-                                                      "ric=", "hotstandby"])
+                                                      "region=", "ric=", "hotstandby"])
     except getopt.GetoptError:
-        print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
-              '[--user user] [--password password] [--position position] [--auth_hostname auth_hostname] '
-              '[--auth_port auth_port] [--scope scope] [--ric ric] [--hotstandby]'
-              ' [--help]')
-        sys.exit(2)
+        print_commandline_usage_and_exit(2)
     for opt, arg in opts:
         if opt in "--help":
-            print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
-                  '[--user user] [--password password] [--position position] [--auth_hostname auth_hostname] '
-                  '[--auth_port auth_port] [--scope scope] [--ric ric] [--hotstandby] [--help]')
-            sys.exit(0)
+            print_commandline_usage_and_exit(0)
         elif opt in "--app_id":
             app_id = arg
         elif opt in "--user":
@@ -292,10 +308,19 @@ if __name__ == "__main__":
             auth_port = arg
         elif opt in "--scope":
             scope = arg
+        elif opt in "--region":
+            region = arg
+            if region != "amer" and region != "emea":
+                print("Unknown region \"" + region + "\". The region must be either \"amer\" or \"emea\".")
+                sys.exit(1)
         elif opt in "--ric":
             ric = arg
         elif opt in "--hotstandby":
                 hotstandby = True
+
+    if user == '' or password == '':
+        print("user and password are required options")
+        sys.exit(2)
 
     if position == '':
         # Populate position if possible
@@ -315,11 +340,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Start websocket handshake; create two sessions when the hotstandby parameter is specified.
-    session1 = WebSocketSession("session1", hostList[0], portList[0])
+    session1 = WebSocketSession("session1", hostList[0])
     session1.connect()
 
     if hotstandby:
-        session2 = WebSocketSession("session2", hostList[1], portList[1])
+        session2 = WebSocketSession("session2", hostList[1])
         session2.connect()
 
     try:
