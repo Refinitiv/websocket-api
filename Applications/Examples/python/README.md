@@ -47,6 +47,7 @@ Pressing the CTRL+C buttons terminates any example.
     - Run (in order):
       - `pip install requests`
       - `pip install websocket-client`
+	    **The websocket-client must be version 0.48**
       - (Only for Python versions less than 3.3) `pip install ipaddress` 
 3. __Run examples__
     - `cd` to `streamingtools/Applications/Examples/python`
