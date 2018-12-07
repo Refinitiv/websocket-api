@@ -27,7 +27,7 @@ file and build it.
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ## Command Line Usage
-```dotnet MarketPriceEdpGwAuthenticationExample.dll [--appID appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user]```
+```dotnet MarketPriceEdpGwAuthenticationExample.dll --user <username> --password <password> --hostname <Elektron Real-Time Service host>```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -49,7 +49,7 @@ Option           |Description|
 * `MarketPriceEdpGwAuthenticationExample.csproj` - visual studio project
 
 ## Command Line Usage
-```dotnet MarketPriceEdpGwServiceDiscoveryExample.dll [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--ric ric] [--scope scope] [--user user]```
+```dotnet MarketPriceEdpGwServiceDiscoveryExample.dll --user <username> --password <password>```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
