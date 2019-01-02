@@ -38,3 +38,6 @@ In the event you would like to contribute to this repository, it is required tha
 Please email a signed and scanned copy to `sdkagreement@thomsonreuters.com`.  If you require that a signed agreement has to be physically mailed to us, please email the request for a mailing address and we will get back to you on where you can send the signed documents.
 
 Documentation for the TREP WebSocket API and a Question & Answer forum are available at the  [WebSocket API Section of the Thomson Reuters Developer Community](https://developers.thomsonreuters.com/websocket-api). 
+
+# Support SLA
+Issues raised via GitHub will be addressed in a best-effort manner. For broad questions regarding ESDK, please refer to documentation and Q&A forum on Developer Community for [ESDK C/C++](https://developers.thomsonreuters.com/elektron/elektron-sdk-cc/qa) and/or [ESDK Java](https://developers.thomsonreuters.com/elektron/elektron-sdk-java/qa) which supported by a existing active community of API users. Please contact Premium Support for any issues or questions that require prompt responses.
