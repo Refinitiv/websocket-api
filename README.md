@@ -10,7 +10,7 @@ The examples demonstrate the following usage:
 * Logging in via Authentication
 * Monitoring connection health via Ping messages
 
-The Examples are found under the Applications/Examples folder. Examples are provided in the following languages:
+The examples are found under the Applications/Examples folder. Examples are provided in the following languages:
 
 * C#
 * Java
