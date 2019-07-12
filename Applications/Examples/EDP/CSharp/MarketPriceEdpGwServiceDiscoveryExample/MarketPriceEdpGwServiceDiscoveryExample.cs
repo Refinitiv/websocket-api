@@ -48,13 +48,16 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         private static string _refreshToken;
 
         /// <summary>The configured hostname of the authentication server. This host is also used for service discovery</summary>
-        private static string _authHostname = "api.edp.thomsonreuters.com";
+        private static string _authHostname = "api.refinitiv.com";
 
         /// <summary>The configured port used when requesting from the authentication server.</summary>
         private static string _authPort = "443";
 
         /// <summary>The configured username used when requesting the token.</summary>
         private static string _username;
+
+        /// <summary>The configured client ID used when requesting the token.</summary>
+        private static string _clientId;
 
         /// <summary>The configured password used when requesting the token.</summary>
         private static string _password;
@@ -318,11 +321,14 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             try
             {
                 /* Send username and password in request. */
-                string postString = "username=" + _username + "&takeExclusiveSignOnControl=True" + "&client_id=" + _username;
+                string postString = "username=" + _username + "&client_id=" + _clientId;
                 if (isRefresh)
                     postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
-                else
+                else 
+                {
+                    postString += "&takeExclusiveSignOnControl=True";
                     postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
+                }
 
                 byte[] postContent = Encoding.ASCII.GetBytes(postString);
                 webRequest.Method = "POST";
@@ -607,6 +613,14 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         }
                         _username = args[++i];
                         break;
+                    case "--clientid":
+                        if (i + 1 >= args.Length)
+                        {
+                            Console.WriteLine("{0} requires an argument.", args[i]);
+                            PrintCommandLineUsageAndExit();
+                        }
+                        _clientId = args[++i];
+                        break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
                         PrintCommandLineUsageAndExit();
@@ -614,9 +628,9 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                 }
             }
 
-            if (_username == null || _password == null)
+            if (_username == null || _password == null || _clientId == null)
             {
-                Console.WriteLine("both password and user must be specified on the command line");
+                Console.WriteLine("User, password and clientid must be specified on the command line");
                 PrintCommandLineUsageAndExit();
             }
         }
@@ -624,7 +638,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
         void PrintCommandLineUsageAndExit()
         {
-            Console.WriteLine("Usage: {0} [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--region region] [--ric ric] [--scope scope] [--user user]", System.AppDomain.CurrentDomain.FriendlyName);
+            Console.WriteLine("Usage: {0} [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--region region] [--ric ric] [--scope scope] [--user user] [--clientid clientID", System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(1);
         }
     }

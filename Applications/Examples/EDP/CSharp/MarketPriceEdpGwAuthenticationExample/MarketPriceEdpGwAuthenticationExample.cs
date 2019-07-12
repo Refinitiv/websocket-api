@@ -37,13 +37,16 @@ namespace MarketPriceEdpGwAuthenticationExample
 
         /// <summary>The configured hostname of the authentication server. If not specified, 
         /// the same hostname as the WebSocket server is used.</summary>
-        private string _authHostName = "api.edp.thomsonreuters.com";
+        private string _authHostName = "api.refinitiv.com";
 
         /// <summary>The configured port used when requesting from the authentication server.</summary>
         private string _authPort = "443";
 
         /// <summary>The configured username used when requesting the token.</summary>
         private string _userName;
+
+        /// <summary>The configured client ID used when requesting the token.</summary>
+        private string _clientId;
 
         /// <summary>The configured password used when requesting the token.</summary>
         private string _password;
@@ -88,11 +91,14 @@ namespace MarketPriceEdpGwAuthenticationExample
             try
             {
                 /* Send username and password in request. */
-                string postString = "username=" + _userName + "&takeExclusiveSignOnControl=True" + "&client_id=" + _userName;
+                string postString = "username=" + _userName + "&client_id=" + _clientId;
                 if (isRefresh)
                     postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
-                else
+                else 
+                {
+                    postString += "&takeExclusiveSignOnControl=True";
                     postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
+                }
 
                 byte[] postContent = Encoding.ASCII.GetBytes(postString);
                 webRequest.Method = "POST";
@@ -398,6 +404,9 @@ namespace MarketPriceEdpGwAuthenticationExample
                     case "--user":
                         _userName = args[++i];
                         break;
+                    case "--clientid":
+                        _clientId = args[++i];
+                        break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
                         PrintCommandLineUsageAndExit();
@@ -405,9 +414,9 @@ namespace MarketPriceEdpGwAuthenticationExample
                 }
             }
 
-            if (_userName == null || _password == null)
+            if (_userName == null || _password == null || _clientId == null)
             {
-                Console.WriteLine("Both password and user must be specified on the command line");
+                Console.WriteLine("User, password and clientid must be specified on the command line");
                 PrintCommandLineUsageAndExit();
             }
 
@@ -421,7 +430,7 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
         void PrintCommandLineUsageAndExit()
         {
-            Console.WriteLine("Usage: {0} [--app_id appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user]", System.AppDomain.CurrentDomain.FriendlyName);
+            Console.WriteLine("Usage: {0} [--app_id appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user] [--clientid clientID]", System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(1);
         }
     }

@@ -27,7 +27,7 @@ file and build it.
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ## Command Line Usage
-```dotnet MarketPriceEdpGwAuthenticationExample.dll --user <username> --password <password> --hostname <Elektron Real-Time Service host>```
+```dotnet MarketPriceEdpGwAuthenticationExample.dll --user <username> --password <password> --clientid clientID --hostname <Elektron Real-Time Service host>```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -35,10 +35,11 @@ The command line options are:
 Option           |Description|
 ----------------:|-----------|
 `--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
 `--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
 `--app_id`       | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
+`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
 `--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
 `--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--ric`          | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
@@ -49,17 +50,18 @@ Option           |Description|
 * `MarketPriceEdpGwAuthenticationExample.csproj` - visual studio project
 
 ## Command Line Usage
-```dotnet MarketPriceEdpGwServiceDiscoveryExample.dll --user <username> --password <password>```
+```dotnet MarketPriceEdpGwServiceDiscoveryExample.dll --user <username> --password <password> --clientid <clientID>```
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
 
 Option           |Description|
 ----------------:|-----------|
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
 `--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
 `--app_id`       | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.edp.thomsonreuters.com.
+`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
 `--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
 `--hotstandby`   | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
 `--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".

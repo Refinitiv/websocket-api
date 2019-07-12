@@ -22,7 +22,7 @@ import threading
 
 # Global Default Variables
 app_id = '256'
-auth_hostname = 'api.edp.thomsonreuters.com'
+auth_hostname = 'api.refinitiv.com'
 auth_port = '443'
 auth_path = 'auth/oauth2/beta1/token'
 hostname = ''
@@ -31,6 +31,7 @@ position = ''
 sts_token = ''
 refresh_token = ''
 user = ''
+clientid = ''
 port = '443'
 client_secret = ''
 scope = 'trapi'
@@ -159,15 +160,14 @@ def get_sts_token(current_refresh_token):
                 'scope': scope}
         print("Sending authentication request with password to ", url, "...")
     else:  # Use the given refresh token
-        data = {'username': user, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token',
-                'takeExclusiveSignOnControl': True}
+        data = {'username': user, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
         print("Sending authentication request with refresh token to ", url, "...")
 
     try:
         r = requests.post(url,
                           headers={'Accept': 'application/json'},
                           data=data,
-                          auth=(user, client_secret),
+                          auth=(clientid, client_secret),
                           verify=True)
 
     except requests.exceptions.RequestException as e:
@@ -192,18 +192,18 @@ def get_sts_token(current_refresh_token):
 if __name__ == "__main__":
     # Get command line parameters
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "password=",
+        opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "clientid=", "password=",
                                                       "position=", "auth_hostname=", "auth_port=", "scope=",
                                                       "ric="])
     except getopt.GetoptError:
         print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
-              '[--user user] [--password password] [--position position] [--auth_hostname auth_hostname] '
+              '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_hostname auth_hostname] '
               '[--auth_port auth_port] [--scope scope] [--ric ric] [--help]')
         sys.exit(2)
     for opt, arg in opts:
         if opt in "--help":
             print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
-                  '[--user user] [--password password] [--position position] [--auth_hostname auth_hostname] '
+                  '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_hostname auth_hostname] '
                   '[--auth_port auth_port] [--scope scope] [--ric ric] [--help]')
             sys.exit(0)
         elif opt in "--hostname":
@@ -214,6 +214,8 @@ if __name__ == "__main__":
             app_id = arg
         elif opt in "--user":
             user = arg
+        elif opt in "--clientid":
+            clientid = arg
         elif opt in "--password":
             password = arg
         elif opt in "--position":
@@ -227,8 +229,8 @@ if __name__ == "__main__":
         elif opt in "--ric":
             ric = arg
 
-    if user == '' or password == '' or  hostname == '':
-        print("user, password, and hostname are required options")
+    if user == '' or password == '' or  hostname == '' or clientid == '':
+        print("user, clientid, password, and hostname are required options")
         sys.exit(2)
 
     if position == '':

@@ -48,14 +48,15 @@ import org.apache.http.util.EntityUtils;
  * - Periodically re-authenticating to the Gateway, and providing the updated token to the Real-Time Service.
  */
 public class MarketPriceEdpGwServiceDiscovery {
-	
+    
     public static String port = "443";
     public static String user = "root";
+    public static String clientid = "";
 
     public static String position = "";
     public static String appId = "256";
     public static String password = "";
-	public static String authHostname = "api.edp.thomsonreuters.com";
+    public static String authHostname = "api.refinitiv.com";
     public static String authPort = "443";
     public static String ric = "/TRI.N";
     public static String scope = "trapi";
@@ -108,11 +109,11 @@ public class MarketPriceEdpGwServiceDiscovery {
                 /* Remove websocket from map, and create a new one based on the previous websocket. */
                 webSocketSessionMap.remove(this);
                 try {
-					_websocket = _websocket.recreate();
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+                    _websocket = _websocket.recreate();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
             }
             else
             {
@@ -300,16 +301,17 @@ public class MarketPriceEdpGwServiceDiscovery {
         }
     }
 
-	public static void main(String[] args) {
-		
-		Options options = new Options();
-		
+    public static void main(String[] args) {
+        
+        Options options = new Options();
+        
         options.addOption(Option.builder().longOpt("port").hasArg().desc("port").build());
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
         options.addOption(Option.builder().longOpt("user").required().hasArg().desc("user").build());
+        options.addOption(Option.builder().longOpt("clientid").required().hasArg().desc("clientid").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
         options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
-		options.addOption(Option.builder().longOpt("auth_hostname").hasArg().desc("auth_hostname").build());
+        options.addOption(Option.builder().longOpt("auth_hostname").hasArg().desc("auth_hostname").build());
         options.addOption(Option.builder().longOpt("auth_port").hasArg().desc("auth_port").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());
         options.addOption(Option.builder().longOpt("scope").hasArg().desc("scope").build());
@@ -330,42 +332,44 @@ public class MarketPriceEdpGwServiceDiscovery {
             return;
         }
 
-		if(cmd.hasOption("help"))
+        if(cmd.hasOption("help"))
         {
-        	 formatter.printHelp("MarketPriceEdpGwServiceDiscovery", options);
-        	 System.exit(0);
+             formatter.printHelp("MarketPriceEdpGwServiceDiscovery", options);
+             System.exit(0);
         }
         if(cmd.hasOption("port"))
-        	port = cmd.getOptionValue("port");
+            port = cmd.getOptionValue("port");
         if(cmd.hasOption("app_id"))
-        	appId = cmd.getOptionValue("app_id");
+            appId = cmd.getOptionValue("app_id");
         if(cmd.hasOption("user"))
-        	user = cmd.getOptionValue("user");
+            user = cmd.getOptionValue("user");
+        if(cmd.hasOption("clientid"))
+            clientid = cmd.getOptionValue("clientid");
         if(cmd.hasOption("password"))
-        	password = cmd.getOptionValue("password");
-		if(cmd.hasOption("auth_hostname"))
-        	authHostname = cmd.getOptionValue("auth_hostname");
+            password = cmd.getOptionValue("password");
+        if(cmd.hasOption("auth_hostname"))
+            authHostname = cmd.getOptionValue("auth_hostname");
         if(cmd.hasOption("auth_port"))
-        	authPort = cmd.getOptionValue("auth_port");
+            authPort = cmd.getOptionValue("auth_port");
         if(cmd.hasOption("position"))
         {
-        	position = cmd.getOptionValue("position");
+            position = cmd.getOptionValue("position");
         }
         else
         {
-    		try {
-				position = Inet4Address.getLocalHost().getHostAddress();
-			} catch (UnknownHostException e) {
+            try {
+                position = Inet4Address.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
                 // If localhost isn't defined, use 127.0.0.1.
-				position = "127.0.0.1/net";
-			}
+                position = "127.0.0.1/net";
+            }
         }
         if(cmd.hasOption("ric"))
-        	ric = cmd.getOptionValue("ric");
+            ric = cmd.getOptionValue("ric");
         if(cmd.hasOption("scope"))
-        	scope = cmd.getOptionValue("scope");
+            scope = cmd.getOptionValue("scope");
         if(cmd.hasOption("hotstandby"))
-        	hotstandby = true;
+            hotstandby = true;
         if(cmd.hasOption("region"))
         {
             region = cmd.getOptionValue("region");
@@ -386,8 +390,8 @@ public class MarketPriceEdpGwServiceDiscovery {
             // Get service information.
             serviceJson = queryServiceDiscovery();
             if (serviceJson == null)
-            	System.exit(1);
-			
+                System.exit(1);
+            
             // Create a host list based on the retrieved service information.
             // If failing over on disconnect, get an endpoint with two locations.
             // If opening multiple connections, get all endpoints that are in one location.
@@ -465,125 +469,125 @@ public class MarketPriceEdpGwServiceDiscovery {
                 // Send the updated access token over our WebSockets.
                 webSocketSession1.updateToken(authJson.getString("access_token"));
                 if (hotstandby)
-                	webSocketSession2.updateToken(authJson.getString("access_token"));
+                    webSocketSession2.updateToken(authJson.getString("access_token"));
             }
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Authenticate to the gateway via an HTTP post request. 
-	 * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
-	 * the refresh token from that response.
-	 * @param previousAuthResponseJson Information from a previous authentication, if available
-	 * @return A JSONObject containing the authentication information from the response.
-	 */
-	public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson) {
-		try
-		{
-			SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Authenticate to the gateway via an HTTP post request. 
+     * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
+     * the refresh token from that response.
+     * @param previousAuthResponseJson Information from a previous authentication, if available
+     * @return A JSONObject containing the authentication information from the response.
+     */
+    public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson) {
+        try
+        {
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
 
-			String url = "https://" + authHostname + ":" + authPort + "/auth/oauth2/beta1/token";
-			HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-			HttpPost httppost = new HttpPost(url);
+            String url = "https://" + authHostname + ":" + authPort + "/auth/oauth2/beta1/token";
+            HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            HttpPost httppost = new HttpPost(url);
 
-			// Set request parameters.
-			List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-			params.add(new BasicNameValuePair("client_id", user));
-			params.add(new BasicNameValuePair("username", user));
-			params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
+            // Set request parameters.
+            List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+            params.add(new BasicNameValuePair("client_id", clientid));
+            params.add(new BasicNameValuePair("username", user));
 
-			if (previousAuthResponseJson == null)
-			{
-				// First time through, send password.
-				params.add(new BasicNameValuePair("grant_type", "password"));
-				params.add(new BasicNameValuePair("password", password));
-				params.add(new BasicNameValuePair("scope", scope));
-				System.out.println("Sending authentication request with password to " + url + "...");
+            if (previousAuthResponseJson == null)
+            {
+                // First time through, send password.
+                params.add(new BasicNameValuePair("grant_type", "password"));
+                params.add(new BasicNameValuePair("password", password));
+                params.add(new BasicNameValuePair("scope", scope));
+                    params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
+                System.out.println("Sending authentication request with password to " + url + "...");
 
-			}
-			else
-			{
-				// Use the refresh token we got from the last authentication response.
-				params.add(new BasicNameValuePair("grant_type", "refresh_token"));
-				params.add(new BasicNameValuePair("refresh_token", previousAuthResponseJson.getString("refresh_token")));
-				System.out.println("Sending authentication request with refresh token to " + url + "...");
-			}
+            }
+            else
+            {
+                // Use the refresh token we got from the last authentication response.
+                params.add(new BasicNameValuePair("grant_type", "refresh_token"));
+                params.add(new BasicNameValuePair("refresh_token", previousAuthResponseJson.getString("refresh_token")));
+                System.out.println("Sending authentication request with refresh token to " + url + "...");
+            }
 
-			httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+            httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 
-			//Execute and get the response.
-			HttpResponse response = httpclient.execute(httppost);
+            //Execute and get the response.
+            HttpResponse response = httpclient.execute(httppost);
 
-			if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
-			{
-				// Authentication failed.
-				System.out.println("EDP-GW authentication failure: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-				System.out.println("Text: " + EntityUtils.toString(response.getEntity()));
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+            {
+                // Authentication failed.
+                System.out.println("EDP-GW authentication failure: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Text: " + EntityUtils.toString(response.getEntity()));
 
-				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED && previousAuthResponseJson != null)
-				{
-					// If we got a 401 response (unauthorized), our refresh token may have expired. Try again using our password.
-					return getAuthenticationInfo(null);
-				}
+                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED && previousAuthResponseJson != null)
+                {
+                    // If we got a 401 response (unauthorized), our refresh token may have expired. Try again using our password.
+                    return getAuthenticationInfo(null);
+                }
 
-				return null;
-			}
+                return null;
+            }
 
-			// Authentication was successful. Deserialize the response and return it.
-			JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-			System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
-			System.out.println(responseJson.toString(2));
-			return responseJson;
+            // Authentication was successful. Deserialize the response and return it.
+            JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
+            System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
+            System.out.println(responseJson.toString(2));
+            return responseJson;
 
-		} catch (Exception e) {
-			System.out.println("EDP-GW authentication failure:");
-			e.printStackTrace();
-			return null;
-		}
-	}
+        } catch (Exception e) {
+            System.out.println("EDP-GW authentication failure:");
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-	/**
+    /**
      * Retrive service information indicating locations to connect to.
-	 * @return A JSONObject containing the service information.
-	 */
-	public static JSONObject queryServiceDiscovery() {
-		try
-		{
-			SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
+     * @return A JSONObject containing the service information.
+     */
+    public static JSONObject queryServiceDiscovery() {
+        try
+        {
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
 
-			String host =  authHostname + ":" + authPort;
-			HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            String host =  authHostname + ":" + authPort;
+            HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
             HttpGet httpget = new HttpGet(new URIBuilder().setScheme("https").setHost(host).setPath(discoveryPath).setParameter("transport", "websocket").build());
             
             httpget.setHeader("Authorization", "Bearer " + authJson.getString("access_token"));
-		
+        
             System.out.println("Sending EDP-GW service discovery request to https://" + host + "/" + discoveryPath  + "...");
 
-			//Execute and get the response.
-			HttpResponse response = httpclient.execute(httpget);
+            //Execute and get the response.
+            HttpResponse response = httpclient.execute(httpget);
 
-			if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
-			{
-				// Discovery request failed.
-				System.out.println("EDP-GW Service discovery result failure: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-				System.out.println("Text: " + EntityUtils.toString(response.getEntity()));
-				return null;
-			}
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+            {
+                // Discovery request failed.
+                System.out.println("EDP-GW Service discovery result failure: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Text: " + EntityUtils.toString(response.getEntity()));
+                return null;
+            }
 
-			// Discovery request was successful. Deserialize the response and return it.
-			JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-			System.out.println("EDP-GW Service discovery succeeded. RECEIVED:");
-			System.out.println(responseJson.toString(2));
-			return responseJson;
+            // Discovery request was successful. Deserialize the response and return it.
+            JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
+            System.out.println("EDP-GW Service discovery succeeded. RECEIVED:");
+            System.out.println(responseJson.toString(2));
+            return responseJson;
 
-		} catch (Exception e) {
-			System.out.println("EDP-GW Service discovery failure:");
-			e.printStackTrace();
-			return null;
-		}
-	}
+        } catch (Exception e) {
+            System.out.println("EDP-GW Service discovery failure:");
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
