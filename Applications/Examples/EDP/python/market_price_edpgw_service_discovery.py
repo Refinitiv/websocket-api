@@ -23,10 +23,8 @@ import threading
 
 # Global Default Variables
 app_id = '256'
-auth_hostname = 'api.refinitiv.com'
-auth_port = '443'
-auth_path = 'auth/oauth2/beta1/token'
-discovery_path = 'streaming/pricing/v1/'
+auth_url = 'https://api.refinitiv.com:443/auth/oauth2/beta1/token'
+discovery_url = 'https://api.refinitiv.com/streaming/pricing/v1/'
 password = ''
 position = ''
 sts_token = ''
@@ -37,6 +35,7 @@ client_secret = ''
 scope = 'trapi'
 region = 'amer'
 ric = '/TRI.N'
+service = 'ELEKTRON_DD'
 hostList = []
 hotstandby = False
 # Global Variables
@@ -61,6 +60,7 @@ class WebSocketSession:
             'ID': 2,
             'Key': {
                 'Name': ric_name,
+                'Service': service
             },
         }
         self.web_socket_app.send(json.dumps(mp_req_json))
@@ -180,105 +180,163 @@ class WebSocketSession:
             self._send_login_request(sts_token, True)
 
 
-def query_service_discovery():
+def query_service_discovery(url=None):
 
-    url = 'https://{}/{}'.format(auth_hostname, discovery_path)
+    if url is None:
+        url = discovery_url
+
     print("Sending EDP-GW service discovery request to " + url)
 
     try:
-        r = requests.get(url, headers={"Authorization": "Bearer " + sts_token}, params={"transport": "websocket"})
+        r = requests.get(url, headers={"Authorization": "Bearer " + sts_token}, params={"transport": "websocket"}, allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
         print('EDP-GW service discovery exception failure:', e)
         return False
 
-    if r.status_code != 200:
-        print('EDP-GW service discovery result failure:', r.status_code, r.reason)
-        print('Text:', r.text)
-        return False
+    if r.status_code == 200:
+        # Authentication was successful. Deserialize the response.
+        response_json = r.json()
+        print("EDP-GW Service discovery succeeded. RECEIVED:")
+        print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
 
-    response_json = r.json()
-    print("EDP-GW Service discovery succeeded. RECEIVED:")
-    print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
+        for index in range(len(response_json['services'])):
 
-    for index in range(len(response_json['services'])):
+            if region == "amer":
+                if not response_json['services'][index]['location'][0].startswith("us-"):
+                    continue
+            elif region == "emea":
+                if not response_json['services'][index]['location'][0].startswith("eu-"):
+                    continue
+            elif region == "apac":
+                if not response_json['services'][index]['location'][0].startswith("ap-"):
+                    continue
 
-        if region == "amer":
-            if not response_json['services'][index]['location'][0].startswith("us-"):
-                continue
-        elif region == "emea":
-            if not response_json['services'][index]['location'][0].startswith("eu-"):
-                continue
+            if not hotstandby:
+                if len(response_json['services'][index]['location']) == 2:
+                    hostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                    str(response_json['services'][index]['port']))
+                    break
+            else:
+                if len(response_json['services'][index]['location']) == 1:
+                    hostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                    str(response_json['services'][index]['port']))
 
-        if not hotstandby:
-            if len(response_json['services'][index]['location']) == 2:
-                hostList.append(response_json['services'][index]['endpoint'] + ":" +
-                                str(response_json['services'][index]['port']))
-                break
+        if hotstandby:
+            if len(hostList) < 2:
+                print("hotstandby support requires at least two hosts")
+                sys.exit(1)
         else:
-            if len(response_json['services'][index]['location']) == 1:
-                hostList.append(response_json['services'][index]['endpoint'] + ":" +
-                                str(response_json['services'][index]['port']))
+            if len(hostList) == 0:
+                print("No host found from EDP service discovery")
+                sys.exit(1)
 
-    if hotstandby:
-        if len(hostList) < 2:
-            print("hotstandby support requires at least two hosts")
-            sys.exit(1)
+        return True
+
+    elif r.status_code == 301 or r.status_code == 302 or r.status_code == 303 or r.status_code == 307 or r.status_code == 308:
+        # Perform URL redirect
+        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        new_host = r.headers['Location']
+        if new_host is not None:
+            print('Perform URL redirect to ', new_host)
+            return query_service_discovery(new_host)
+        return False
+    elif r.status_code == 403 or r.status_code == 451:
+        # Stop trying with the request
+        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        print('Stop trying with the request')
+        return False
     else:
-        if len(hostList) == 0:
-            print("No host found from EDP service discovery")
-            sys.exit(1)
+        # Retry the service discovery request
+        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        print('Retry the service discovery request')
+        return query_service_discovery()
 
-    return True
 
-
-def get_sts_token(current_refresh_token):
+def get_sts_token(current_refresh_token, url=None):
     """
         Retrieves an authentication token.
         :param current_refresh_token: Refresh token retrieved from a previous authentication, used to retrieve a
         subsequent access token. If not provided (i.e. on the initial authentication), the password is used.
     """
-    url = 'https://{}:{}/{}'.format(auth_hostname, auth_port, auth_path)
+
+    if url is None:
+        url = auth_url
 
     if not current_refresh_token:  # First time through, send password
-        data = {'username': user, 'password': password, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
-                'scope': scope}
-        print("Sending authentication request with password to ", url, "...")
+        if url.startswith('https'):
+            data = {'username': user, 'password': password, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
+                    'scope': scope}
+        else:
+            data = {'username': user, 'password': password, 'client_id': clientid, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
+                    'scope': scope}
+        print("Sending authentication request with password to", url, "...")
     else:  # Use the given refresh token
-        data = {'username': user, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
-        print("Sending authentication request with refresh token to ", url, "...")
+        if url.startswith('https'):
+            data = {'username': user, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
+        else:
+            data = {'username': user, 'client_id': clientid, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
+        print("Sending authentication request with refresh token to", url, "...")
 
     try:
-        r = requests.post(url,
-                          headers={'Accept': 'application/json'},
-                          data=data,
-                          auth=(clientid, client_secret),
-                          verify=True)
+        if url.startswith('https'):
+            # Request with auth for https protocol
+            r = requests.post(url,
+                              headers={'Accept': 'application/json'},
+                              data=data,
+                              auth=(clientid, client_secret),
+                              verify=True,
+                              allow_redirects=False)
+        else:
+            # Request without auth for non https protocol (e.g. http)
+            r = requests.post(url,
+                              headers={'Accept': 'application/json'},
+                              data=data,
+                              verify=True,
+                              allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
         print('EDP-GW authentication exception failure:', e)
         return None, None, None
 
-    if r.status_code != 200:
-        print('EDP-GW authentication result failure:', r.status_code, r.reason)
-        print('Text:', r.text)
-        if r.status_code == 401 and current_refresh_token:
+    if r.status_code == 200:
+        auth_json = r.json()
+        print("EDP-GW Authentication succeeded. RECEIVED:")
+        print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
+
+        return auth_json['access_token'], auth_json['refresh_token'], auth_json['expires_in']
+    elif r.status_code == 301 or r.status_code == 302 or r.status_code == 307 or r.status_code == 308:
+        # Perform URL redirect
+        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        new_host = r.headers['Location']
+        if new_host is not None:
+            print('Perform URL redirect to ', new_host)
+            return get_sts_token(current_refresh_token, new_host)
+        return None, None, None
+    elif r.status_code == 400 or r.status_code == 401:
+        # Retry with username and password
+        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        if current_refresh_token:
             # Refresh token may have expired. Try using our password.
+            print('Retry with username and password')
             return get_sts_token(None)
         return None, None, None
-
-    auth_json = r.json()
-    print("EDP-GW Authentication succeeded. RECEIVED:")
-    print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
-
-    return auth_json['access_token'], auth_json['refresh_token'], auth_json['expires_in']
+    elif r.status_code == 403 or r.status_code == 451:
+        # Stop retrying with the request
+        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Stop retrying with the request')
+        return None, None, None
+    else:
+        # Retry the request to the API gateway
+        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Retry the request to the API gateway')
+        return get_sts_token(current_refresh_token)
 
 
 def print_commandline_usage_and_exit(exit_code):
     print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
-          '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_hostname auth_hostname] '
-          '[--auth_port auth_port] [--scope scope] [--region region] [--ric ric] [--hotstandby]'
-          ' [--help]')
+          '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
+          '[--discovery_url discovery_url] [--scope scope] [--service service] [--region region] [--ric ric] [--hotstandby] [--help]')
     sys.exit(exit_code)
 
 
@@ -287,8 +345,8 @@ if __name__ == "__main__":
     opts = []
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "app_id=", "user=", "clientid=", "password=",
-                                                      "position=", "auth_hostname=", "auth_port=", "scope=",
-                                                      "region=", "ric=", "hotstandby"])
+                                                      "position=", "auth_url=", "discovery_url=", "scope=", "service=", "region=", "ric=",
+                                                      "hotstandby"])
     except getopt.GetoptError:
         print_commandline_usage_and_exit(2)
     for opt, arg in opts:
@@ -304,16 +362,18 @@ if __name__ == "__main__":
             password = arg
         elif opt in "--position":
             position = arg
-        elif opt in "--auth_hostname":
-            auth_hostname = arg
-        elif opt in "--auth_port":
-            auth_port = arg
+        elif opt in "--auth_url":
+            auth_url = arg
+        elif opt in "--discovery_url":
+            discovery_url = arg
         elif opt in "--scope":
             scope = arg
+        elif opt in "--service":
+            service = arg
         elif opt in "--region":
             region = arg
-            if region != "amer" and region != "emea":
-                print("Unknown region \"" + region + "\". The region must be either \"amer\" or \"emea\".")
+            if region != "amer" and region != "emea" and region != 'apac':
+                print("Unknown region \"" + region + "\". The region must be either \"amer\", \"emea\", or \"apac\".")
                 sys.exit(1)
         elif opt in "--ric":
             ric = arg

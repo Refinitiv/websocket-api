@@ -47,11 +47,13 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         private static string _authToken;
         private static string _refreshToken;
 
-        /// <summary>The configured hostname of the authentication server. This host is also used for service discovery</summary>
-        private static string _authHostname = "api.refinitiv.com";
+        /// <summary>The full URL of the authentication server. If not specified,
+        /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
+        private static string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
 
-        /// <summary>The configured port used when requesting from the authentication server.</summary>
-        private static string _authPort = "443";
+        /// <summary>The full URL of the EDP service discovery server. If not specified,
+        /// https://api.refinitiv.com/streaming/pricing/v1/ is used.</summary>
+        private static string _discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
 
         /// <summary>The configured username used when requesting the token.</summary>
         private static string _username;
@@ -70,6 +72,9 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
         /// <summary>The configured RIC used when requesting price data.</summary>
         private static string _ric = "/TRI.N";
+
+        /// <summary>The requested service name or service ID.</summary>
+        private static string _service = "ELEKTRON_DD";
 
         /// <summary>The IP address, used as the application's position when requesting the token.</summary>
         private static string _position;
@@ -278,7 +283,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                             {
                                 // Login was successful. Request an item
                                 IsLoggedIn = true;
-                                SendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\"}" + "}");
+                                SendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\",\"Service\":\"" + _service + "\"}" + "}");
                             }
                         }
                         break;
@@ -311,20 +316,21 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// <summary> Send an HTTP request to the specified authentication server, containing our username and password.
         /// The token will be used to login on the websocket. </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
-        public static bool GetAuthenticationInfo(bool isRefresh)
+        public bool GetAuthenticationInfo(bool isRefresh, string url=null)
         {
-            string url = "https://" + _authHostname + ":" + _authPort + "/auth/oauth2/beta1/token";
-            Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}\n", isRefresh, url);
+            if (string.IsNullOrEmpty(url))
+                url = _authUrl;
+
+            Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}", isRefresh, url);
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
-            webRequest.UserAgent = "CSharpMarketPriceEdpGwServiceDiscoveryExample";
             try
             {
                 /* Send username and password in request. */
                 string postString = "username=" + _username + "&client_id=" + _clientId;
                 if (isRefresh)
                     postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
-                else 
+                else
                 {
                     postString += "&takeExclusiveSignOnControl=True";
                     postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
@@ -334,20 +340,20 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                 webRequest.Method = "POST";
                 webRequest.ContentType = "application/x-www-form-urlencoded";
                 webRequest.ContentLength = postContent.Length;
+                webRequest.AllowAutoRedirect = false;
 
                 System.IO.Stream requestStream = webRequest.GetRequestStream();
                 requestStream.Write(postContent, 0, postContent.Length);
-                requestStream.Dispose();
+                requestStream.Close();
 
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") ||
-                    webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
                     dynamic msg = JsonConvert.DeserializeObject(new System.IO.StreamReader(webResponse.GetResponseStream()).ReadToEnd());
-                    Console.WriteLine("RECEIVED:\n{0}", JsonConvert.SerializeObject(msg, Formatting.Indented));
+                    Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // other possible items: auth_token, refresh_token, expires_in
                     _authToken = msg["access_token"].ToString();
@@ -355,16 +361,71 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     if (Int32.TryParse(msg["expires_in"].ToString(), out _expiration_in_ms))
                         _expiration_in_ms *= 1000;
                 }
-                webResponse.Dispose();
+
+                webResponse.Close();
                 return true;
+
             }
             catch (WebException e)
             {
-                /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
-                if (e.InnerException != null)
-                    Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message.ToString());
+                HttpWebResponse response = null;
+                if (e.Status == WebExceptionStatus.ProtocolError)
+                {
+                    response = (HttpWebResponse)e.Response;
+
+                    HttpStatusCode statusCode = response.StatusCode;
+
+                    bool ret = false;
+
+                    switch (statusCode)
+                    {
+                        case HttpStatusCode.Moved:             // 301
+                        case HttpStatusCode.Redirect:          // 302
+                        case HttpStatusCode.TemporaryRedirect: // 307
+                        case (HttpStatusCode)308:              // 308 Permanent Redirect
+                            // Perform URL redirect
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            string newHost = response.Headers.Get("Location");
+                            if (!string.IsNullOrEmpty(newHost))
+                                ret = GetAuthenticationInfo(isRefresh, newHost);
+                            break;
+                        case HttpStatusCode.BadRequest:        // 400
+                        case HttpStatusCode.Unauthorized:      // 401
+                            // Retry with username and password
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            if (isRefresh)
+                            {
+                                Console.WriteLine("Retry with username and password");
+                                ret = GetAuthenticationInfo(false);
+                            }
+                            else
+                                ret = false;
+                            break;
+                        case HttpStatusCode.Forbidden:         // 403
+                        case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
+                            // Stop retrying with the request
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Stop retrying with the request");
+                            ret = false;
+                            break;
+                        default:
+                            // Retry the request to the API gateway
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Retry the request to the API gateway");
+                            ret = GetAuthenticationInfo(isRefresh);
+                            break;
+                    }
+                    response.Close();
+                    return ret;
+                }
                 else
-                    Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                {
+                    /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
+                    if (e.InnerException != null)
+                        Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
+                    else
+                        Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                }
             }
             return false;
         }
@@ -373,17 +434,22 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// Requests EDP service discovery to get endpoint(s) for EDP-RT
         /// </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
-        public static bool DiscoverServices()
+        public static bool DiscoverServices(string url = null)
         {
-            string url = "https://" + _authHostname + ":" + _authPort + "/streaming/pricing/v1/?transport=websocket";
-            Console.WriteLine("Sending service discovery request to {0}\n", url);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
-            webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
+            if(string.IsNullOrEmpty(url))
+              url = _discoveryUrl;
 
+            string param_url = url + "?transport=websocket";
+
+            Console.WriteLine("Sending service discovery request to {0}\n", param_url);
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(param_url);
+            webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
+            webRequest.AllowAutoRedirect = false;
             webRequest.UserAgent = "CSharpMarketPriceEdpGwServiceDiscoveryExample";
             try
             {
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+
                 if (webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
@@ -398,15 +464,15 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         Newtonsoft.Json.Linq.JArray locations = (Newtonsoft.Json.Linq.JArray)endpoints[i]["location"];
 
                         /* If a service has one location, then it represents an endpoint used to support hot standby. Users are
-                         * expected to connect to multiple endpoints to activate hot standby, so this example fails if only one service
-                         * exists with a single location and the hot standby feature is active.
-                         *
-                         * If a service has two locations, then it is not a server that supports hot standby, but instead a load balancer
-                         * with multiple endpoints behind it represented by the locations. Users connect to the endpoint and port
-                         * indicated for the service.
-                         *
-                         * Services not fitting this pattern are ignored
-                         */
+                            * expected to connect to multiple endpoints to activate hot standby, so this example fails if only one service
+                            * exists with a single location and the hot standby feature is active.
+                            *
+                            * If a service has two locations, then it is not a server that supports hot standby, but instead a load balancer
+                            * with multiple endpoints behind it represented by the locations. Users connect to the endpoint and port
+                            * indicated for the service.
+                            *
+                            * Services not fitting this pattern are ignored
+                            */
 
                         if(_region.Equals("amer"))
                         {
@@ -416,6 +482,11 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         else if (_region.Equals("emea"))
                         {
                             if (((string)endpoints[i]["location"][0]).StartsWith("eu-") == false)
+                                continue;
+                        }
+                        else if (_region.Equals("apac"))
+                        {
+                            if (((string)endpoints[i]["location"][0]).StartsWith("ap-") == false)
                                 continue;
                         }
 
@@ -448,17 +519,66 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         }
                     }
                 }
-                webResponse.Dispose();
                 return true;
             }
             catch (WebException e)
             {
-                // service discovery failed
-                if (e.InnerException != null)
-                    Console.WriteLine("Service discovery request failed: {0} -- {1}\n", e.Message.ToString(), e.InnerException.Message.ToString());
+
+                HttpWebResponse response = null;
+                if (e.Status == WebExceptionStatus.ProtocolError)
+                {
+                    response = (HttpWebResponse)e.Response;
+
+                    HttpStatusCode statusCode = response.StatusCode;
+
+                    bool ret = false;
+
+                    switch (statusCode)
+                    {
+                        case HttpStatusCode.Moved:             // 301
+                        case HttpStatusCode.Redirect:          // 302
+                        case HttpStatusCode.RedirectMethod:    // 303
+                        case HttpStatusCode.TemporaryRedirect: // 307
+                        case (HttpStatusCode)308:              // 308 Permanent Redirect
+                            // Perform URL redirect
+                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+
+                            string newHost = response.Headers.Get("Location");
+                            if (!string.IsNullOrEmpty(newHost))
+                            {
+                                Console.WriteLine("Perform URL redirect to {0}", newHost);
+                                ret = DiscoverServices(newHost);
+                            }
+                            else
+                                ret = false;
+                            break;
+                        case HttpStatusCode.Forbidden:         // 403
+                        case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
+                            // Stop retrying with the request
+                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Stop retrying with the request");
+                            ret = false;
+                            break;
+                        default:
+                            // Retry the service discovery request
+                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Retry the service discovery request");
+                            ret = DiscoverServices();
+                            break;
+                    }
+
+                    response.Close();
+                    return ret;
+                }
                 else
-                    Console.WriteLine("Service discovery request failed: {0}", e.Message.ToString());
-                Environment.Exit(1);
+                {
+                    // service discovery failed
+                    if (e.InnerException != null)
+                        Console.WriteLine("Service discovery request failed: {0} -- {1}\n", e.Message.ToString(), e.InnerException.Message.ToString());
+                    else
+                        Console.WriteLine("Service discovery request failed: {0}", e.Message.ToString());
+                    Environment.Exit(1);
+                }
             }
             return false;
         }
@@ -498,10 +618,8 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             {
                 Thread.Sleep((int)(_expiration_in_ms * .90));
 
-                // refresh authentication token; if refresh attempt fails, try full auth
                 if (!GetAuthenticationInfo(true))
-                    if (!GetAuthenticationInfo(false))
-                        Console_CancelKeyPress(null, null);
+                    Console_CancelKeyPress(null, null);
 
                 foreach (var webSocketSession in _webSocketSessions)
                 {
@@ -519,7 +637,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         public static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             foreach (var session in _webSocketSessions)
-            { 
+            {
                 if(session.Value.WebSocket.State == WebSocketState.Open)
                 {
                     Console.WriteLine("The WebSocket connection is closed for " + session.Value.Name);
@@ -549,21 +667,21 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
                         _appID = args[++i];
                         break;
-                    case "--auth_hostname":
+                    case "--auth_url":
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
                             PrintCommandLineUsageAndExit();
                         }
-                        _authHostname = args[++i];
+                        _authUrl = args[++i];
                         break;
-                    case "--auth_port":
+                    case "--discovery_url":
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
                             PrintCommandLineUsageAndExit();
                         }
-                        _authPort = args[++i];
+                        _discoveryUrl = args[++i];
                         break;
                     case "--hotstandby":
                         _hotstandby = true;
@@ -583,9 +701,9 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                             PrintCommandLineUsageAndExit();
                         }
                         _region = args[++i];
-                        if(!_region.Equals("amer") && !_region.Equals("emea"))
+                        if(!_region.Equals("amer") && !_region.Equals("emea") && !_region.Equals("apac"))
                         {
-                            Console.WriteLine("Unknown region \"" + _region + "\". The region must be either \"amer\" or \"emea\".");
+                            Console.WriteLine("Unknown region \"" + _region + "\". The region must be either \"amer\", \"emea\", or \"apac\".");
                             Environment.Exit(1);
                         }
                         break;
@@ -621,6 +739,14 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         }
                         _clientId = args[++i];
                         break;
+                    case "--service":
+                        if (i + 1 >= args.Length)
+                        {
+                            Console.WriteLine("{0} requires an argument.", args[i]);
+                            PrintCommandLineUsageAndExit();
+                        }
+                        _service = args[++i];
+                        break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
                         PrintCommandLineUsageAndExit();
@@ -638,7 +764,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
         void PrintCommandLineUsageAndExit()
         {
-            Console.WriteLine("Usage: {0} [--app_id appID] [--auth_hostname hostname] [--auth_port port] [--hotstandby] [--password password] [--region region] [--ric ric] [--scope scope] [--user user] [--clientid clientID", System.AppDomain.CurrentDomain.FriendlyName);
+            Console.WriteLine("Usage: {0} [--app_id appID] [--auth_url auth_url] [--discovery_url discovery_url] [--hotstandby] [--password password] [--region region] [--ric ric] [--scope scope] [--user user] [--clientid clientID] [--service service]", System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(1);
         }
     }

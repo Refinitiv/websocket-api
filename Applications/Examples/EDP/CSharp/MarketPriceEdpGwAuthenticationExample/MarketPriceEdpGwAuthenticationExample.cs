@@ -35,12 +35,9 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>The configured port used when opening the WebSocket.</summary>
         private string _port = "443";
 
-        /// <summary>The configured hostname of the authentication server. If not specified, 
-        /// the same hostname as the WebSocket server is used.</summary>
-        private string _authHostName = "api.refinitiv.com";
-
-        /// <summary>The configured port used when requesting from the authentication server.</summary>
-        private string _authPort = "443";
+        /// <summary>The full URL of the authentication server. If not specified,
+        /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
+        private string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
 
         /// <summary>The configured username used when requesting the token.</summary>
         private string _userName;
@@ -59,6 +56,9 @@ namespace MarketPriceEdpGwAuthenticationExample
 
         /// <summary>The configured RIC used when requesting price data.</summary>
         private string _ric = "/TRI.N";
+
+        /// <summary>The requested service name or service ID.</summary>
+        private string _service = "ELEKTRON_DD";
 
         /// <summary>The IP address, used as the application's position when requesting the token.</summary>
         private string _position;
@@ -82,9 +82,11 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary> Send an HTTP request to the specified authentication server, containing our username and password.
         /// The token will be used to login on the websocket. </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
-        public bool GetAuthenticationInfo(bool isRefresh)
+        public bool GetAuthenticationInfo(bool isRefresh, string url=null)
         {
-            string url = "https://" + _authHostName + ":" + _authPort + "/auth/oauth2/beta1/token";
+            if (string.IsNullOrEmpty(url))
+                url = _authUrl;
+
             Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}", isRefresh, url);
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
@@ -94,7 +96,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 string postString = "username=" + _userName + "&client_id=" + _clientId;
                 if (isRefresh)
                     postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
-                else 
+                else
                 {
                     postString += "&takeExclusiveSignOnControl=True";
                     postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
@@ -104,6 +106,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 webRequest.Method = "POST";
                 webRequest.ContentType = "application/x-www-form-urlencoded";
                 webRequest.ContentLength = postContent.Length;
+                webRequest.AllowAutoRedirect = false;
 
                 System.IO.Stream requestStream = webRequest.GetRequestStream();
                 requestStream.Write(postContent, 0, postContent.Length);
@@ -111,8 +114,7 @@ namespace MarketPriceEdpGwAuthenticationExample
 
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || 
-                    webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
@@ -125,16 +127,71 @@ namespace MarketPriceEdpGwAuthenticationExample
                     if (Int32.TryParse(msg["expires_in"].ToString(), out _expirationInMilliSeconds))
                         _expirationInMilliSeconds *= 1000;
                 }
+
                 webResponse.Close();
                 return true;
+
             }
             catch (WebException e)
             {
-                /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
-                if (e.InnerException != null)
-                    Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
+                HttpWebResponse response = null;
+                if (e.Status == WebExceptionStatus.ProtocolError)
+                {
+                    response = (HttpWebResponse)e.Response;
+
+                    HttpStatusCode statusCode = response.StatusCode;
+
+                    bool ret = false;
+
+                    switch (statusCode)
+                    {
+                        case HttpStatusCode.Moved:             // 301
+                        case HttpStatusCode.Redirect:          // 302
+                        case HttpStatusCode.TemporaryRedirect: // 307
+                        case (HttpStatusCode)308:              // 308 Permanent Redirect
+                            // Perform URL redirect
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            string newHost = response.Headers.Get("Location");
+                            if (!string.IsNullOrEmpty(newHost))
+                                ret = GetAuthenticationInfo(isRefresh, newHost);
+                            break;
+                        case HttpStatusCode.BadRequest:        // 400
+                        case HttpStatusCode.Unauthorized:      // 401
+                            // Retry with username and password
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            if (isRefresh)
+                            {
+                                Console.WriteLine("Retry with username and password");
+                                ret = GetAuthenticationInfo(false);
+                            }
+                            else
+                                ret = false;
+                            break;
+                        case HttpStatusCode.Forbidden:         // 403
+                        case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
+                            // Stop retrying with the request
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Stop retrying with the request");
+                            ret = false;
+                            break;
+                        default:
+                            // Retry the request to the API gateway
+                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Retry the request to the API gateway");
+                            ret = GetAuthenticationInfo(isRefresh);
+                            break;
+                    }
+                    response.Close();
+                    return ret;
+                }
                 else
-                    Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                {
+                    /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
+                    if (e.InnerException != null)
+                        Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
+                    else
+                        Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                }
             }
             return false;
         }
@@ -190,10 +247,8 @@ namespace MarketPriceEdpGwAuthenticationExample
                         Thread.Sleep((int)(_expirationInMilliSeconds * .90));
                         if (_loggedIn)
                         {
-                            // refresh authentication token; if refresh attempt fails, try full auth
                             if (!GetAuthenticationInfo(true))
-                                if (!GetAuthenticationInfo(false))
-                                    Environment.Exit(1);
+                                Environment.Exit(1);
                             SendLogin(true);
                         }
 
@@ -247,7 +302,7 @@ namespace MarketPriceEdpGwAuthenticationExample
             byte[] dataBuffer;
 
             while (true)
-            { 
+            {
                 var result = _webSocket.ReceiveAsync(readBuffer, _cts.Token);
 
                 if (result.IsFaulted)
@@ -331,7 +386,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                             _loggedIn = true;
 
                             /* Request an item. */
-                            SendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\"}" + "}");
+                            SendMessage("{" + "\"ID\": 2," + "\"Key\": {\"Name\":\"" + _ric + "\",\"Service\":\"" + _service + "\"}" + "}");
                         }
                     }
                     break;
@@ -380,11 +435,8 @@ namespace MarketPriceEdpGwAuthenticationExample
                     case "--app_id":
                         _appId = args[++i];
                         break;
-                    case "--auth_hostname":
-                        _authHostName = args[++i];
-                        break;
-                    case "--auth_port":
-                        _authPort = args[++i];
+                    case "--auth_url":
+                        _authUrl = args[++i];
                         break;
                     case "--hostname":
                         _hostName = args[++i];
@@ -406,6 +458,9 @@ namespace MarketPriceEdpGwAuthenticationExample
                         break;
                     case "--clientid":
                         _clientId = args[++i];
+                        break;
+                    case "--service":
+                        _service = args[++i];
                         break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
@@ -430,7 +485,7 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
         void PrintCommandLineUsageAndExit()
         {
-            Console.WriteLine("Usage: {0} [--app_id appId] [--auth_hostname hostname] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user] [--clientid clientID]", System.AppDomain.CurrentDomain.FriendlyName);
+            Console.WriteLine("Usage: {0} [--app_id appId] [--auth_url url] [--auth_port port] [--hostname hostname] [--password password] [--port port] [--ric ric] [--scope scope] [--user user] [--clientid clientID] [--service service]", System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(1);
         }
     }

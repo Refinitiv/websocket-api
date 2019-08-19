@@ -34,7 +34,7 @@ token over their WebSockets to the ERT Service.
     - Run:
 	    -  `ant`
 	- Ant should download the dependent libraries via Ivy, and compile the examples.
-    - NOTE: When finished, the build conveniently prints a classpath for use when running the 
+    - NOTE: When finished, the build conveniently prints a classpath for use when running the
       examples.
 
 ### RedHat/Oracle Linux
@@ -42,15 +42,15 @@ token over their WebSockets to the ERT Service.
     - Run (as root):
 	    - `yum install ant ivy`
         - If these packages are not available on your system, they may be available in one of the following repositories:
-          - (RedHat 6, Oracle 6) Extra Packages for Enterprise Linux (<https://fedoraproject.org/wiki/EPEL>): 
+          - (RedHat 6, Oracle 6) Extra Packages for Enterprise Linux (<https://fedoraproject.org/wiki/EPEL>):
             `rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm`
 		  - (Oracle 6, Oracle 7) Download the appropriate repository file for the system and enable the latest/addons repositories, as described here: <https://docs.oracle.com/cd/E37670_01/E37355/html/ol_downloading_yum_repo.html>
-		    
+
 2. __Build__
     - Run:
 	    -  `ant`
     - Ant should download the dependent libraries via Ivy, and compile the examples.
-    - NOTE: When finished, the build conveniently prints a classpath for use when running the 
+    - NOTE: When finished, the build conveniently prints a classpath for use when running the
       examples.
 
 ## Running the Examples
@@ -58,7 +58,7 @@ token over their WebSockets to the ERT Service.
 ### Running the MarketPriceEdpGwAuthentication Example
 
 To run the example:
-  - Set the classpath that Ant gave you: 
+  - Set the classpath that Ant gave you:
 	- `set CLASSPATH=<classpath from ant>` (Windows)
     - `export CLASSPATH=<classpath from ant>` (Linux)
   - Run: `java MarketPriceEdpGwAuthentication --user <username> --password <password> --clientid <client ID> --hostname <Elektron Real-Time Service host>`
@@ -66,19 +66,18 @@ To run the example:
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
-`--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
-`--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+Option            |Description|
+-----------------:|-----------|
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--hostname`      | REQUIRED. Hostname of the Elektron Real-Time Service.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
+`--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
+`--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
 ### Running the MarketPriceEdpGwServiceDiscovery Example
 
@@ -89,23 +88,22 @@ To run the example:
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--hotstandby`   | OPTIONAL. Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
-`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
-`--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+Option            |Description|
+-----------------:|-----------|
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--hotstandby`    | OPTIONAL. Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
+`--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
+`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
+`--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
 ## Source File Description
 
 * `MarketPriceEdpGwAuthentication.java` - Source file for the MarketPriceEdpGwAuthentication example.
 
 * `MarketPriceEdpGwServiceDiscovery.java` - Source file for the MarketPriceEdpGwServiceDiscovery example.
-

@@ -25,13 +25,16 @@ import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 
-/** 
+/**
  * This example demonstrates authenticating via the Elektron Real-Time Service and Elektron Data Platform Gateway, and logging in with the retrieved token to retrieve market content.
  * It does so by:
  * - Authenticating via HTTP Post request to the Gateway
@@ -41,7 +44,7 @@ import org.apache.http.util.EntityUtils;
  * - Perodically re-authenticating to the Gateway, and providing the updated token to the Real-Time Service.
  */
 public class MarketPriceEdpGwAuthentication {
-    
+
     public static String server;
     public static String hostname = "127.0.0.1";
     public static String port = "443";
@@ -52,16 +55,16 @@ public class MarketPriceEdpGwAuthentication {
     public static WebSocket ws = null;
     public static String authToken = "";
     public static String password = "";
-    public static String authHostname = "api.refinitiv.com";
-    public static String authPort = "443";
+    public static String authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
     public static String ric = "/TRI.N";
+    public static String service = "ELEKTRON_DD";
     public static String scope = "trapi";
     public static JSONObject authJson = null;
 
     public static void main(String[] args) {
-        
+
     Options options = new Options();
-        
+
         options.addOption(Option.builder().longOpt("hostname").required().hasArg().desc("hostname").build());
         options.addOption(Option.builder().longOpt("port").hasArg().desc("port").build());
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
@@ -69,9 +72,9 @@ public class MarketPriceEdpGwAuthentication {
         options.addOption(Option.builder().longOpt("clientid").required().hasArg().desc("clientid").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
         options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
-        options.addOption(Option.builder().longOpt("auth_hostname").hasArg().desc("auth_hostname").build());
-        options.addOption(Option.builder().longOpt("auth_port").hasArg().desc("auth_port").build());
+        options.addOption(Option.builder().longOpt("auth_url").hasArg().desc("auth_url").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());
+        options.addOption(Option.builder().longOpt("service").hasArg().desc("service").build());
         options.addOption(Option.builder().longOpt("scope").hasArg().desc("scope").build());
         options.addOption(Option.builder().longOpt("help").desc("help").build());
 
@@ -106,10 +109,8 @@ public class MarketPriceEdpGwAuthentication {
             clientid = cmd.getOptionValue("clientid");
         if(cmd.hasOption("password"))
             password = cmd.getOptionValue("password");
-        if(cmd.hasOption("auth_hostname"))
-            authHostname = cmd.getOptionValue("auth_hostname");
-        if(cmd.hasOption("auth_port"))
-            authPort = cmd.getOptionValue("auth_port");
+        if(cmd.hasOption("auth_url"))
+            authUrl = cmd.getOptionValue("auth_url");
         if(cmd.hasOption("position"))
         {
             position = cmd.getOptionValue("position");
@@ -125,9 +126,11 @@ public class MarketPriceEdpGwAuthentication {
         }
         if(cmd.hasOption("ric"))
             ric = cmd.getOptionValue("ric");
+        if(cmd.hasOption("service"))
+            service = cmd.getOptionValue("service");
         if(cmd.hasOption("scope"))
             scope = cmd.getOptionValue("scope");
-        
+
         try {
 
             // Connect to the gateway and authenticate (using our username and password)
@@ -137,11 +140,11 @@ public class MarketPriceEdpGwAuthentication {
 
             // Determine when the access token expires. We will re-authenticate before then.
             int expireTime = Integer.parseInt(authJson.getString("expires_in"));
-                
+
             server = String.format("wss://%s:%s/WebSocket", hostname, port);
             System.out.println("Connecting to WebSocket " + server + " ...");
             ws = connect();
-            
+
             while(true) {
                 if (expireTime < 30)
                 {
@@ -171,7 +174,7 @@ public class MarketPriceEdpGwAuthentication {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Connect to the Realtime Service over a WebSocket.
      */
@@ -209,22 +212,38 @@ public class MarketPriceEdpGwAuthentication {
                 .addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)
                 .connect();
     }
-    
+
     /**
-     * Authenticate to the gateway via an HTTP post request. 
+     * Authenticate to the gateway via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
-     * the refresh token from that response.
+     * the refresh token from that response. Uses authUrl as url.
      * @param previousAuthResponseJson Information from a previous authentication, if available
      * @return A JSONObject containing the authentication information from the response.
      */
     public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson) {
+        String url = authUrl;
+        return getAuthenticationInfo(previousAuthResponseJson, url);
+    }
+
+    /**
+     * Authenticate to the gateway via an HTTP post request.
+     * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
+     * the refresh token from that response.
+     * @param previousAuthResponseJson Information from a previous authentication, if available
+     * @param url The HTTP post url
+     * @return A JSONObject containing the authentication information from the response.
+     */
+    public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson, String url) {
         try
         {
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
 
-            String url = "https://" + authHostname + ":" + authPort + "/auth/oauth2/beta1/token";
             HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
             HttpPost httppost = new HttpPost(url);
+            HttpParams httpParams = new BasicHttpParams();
+
+            // Disable redirect
+            httpParams.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
 
             // Set request parameters.
             List<NameValuePair> params = new ArrayList<NameValuePair>(2);
@@ -237,7 +256,7 @@ public class MarketPriceEdpGwAuthentication {
                 params.add(new BasicNameValuePair("grant_type", "password"));
                 params.add(new BasicNameValuePair("password", password));
                 params.add(new BasicNameValuePair("scope", scope));
-                    params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
+                params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
                 System.out.println("Sending authentication request with password to " + url + "...");
 
             }
@@ -249,32 +268,60 @@ public class MarketPriceEdpGwAuthentication {
                 System.out.println("Sending authentication request with refresh token to " + url + "...");
             }
 
+            httppost.setParams(httpParams);
             httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 
             //Execute and get the response.
             HttpResponse response = httpclient.execute(httppost);
 
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
-            {
-                // Authentication failed.
-                System.out.println("EDP-GW authentication failure: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-                System.out.println("Text: " + EntityUtils.toString(response.getEntity()));
+            int statusCode = response.getStatusLine().getStatusCode();
 
-                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED && previousAuthResponseJson != null)
+            switch ( statusCode ) {
+            case HttpStatus.SC_OK:                  // 200
+                // Authentication was successful. Deserialize the response and return it.
+                JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
+                System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
+                System.out.println(responseJson.toString(2));
+                return responseJson;
+            case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
+            case HttpStatus.SC_MOVED_TEMPORARILY:              // 302
+            case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
+            case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
+                // Perform URL redirect
+                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                Header header = response.getFirstHeader("Location");
+                if( header != null )
                 {
-                    // If we got a 401 response (unauthorized), our refresh token may have expired. Try again using our password.
+                    String newHost = header.getValue();
+                    if ( newHost != null )
+                    {
+                        System.out.println("Perform URL redirect to " + newHost);
+                        return getAuthenticationInfo(previousAuthResponseJson, newHost);
+                    }
+                }
+                return null;
+            case HttpStatus.SC_BAD_REQUEST:                    // 400
+            case HttpStatus.SC_UNAUTHORIZED:                   // 401
+                // Retry with username and password
+                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                if (previousAuthResponseJson != null)
+                {
+                    System.out.println("Retry with username and password");
                     return getAuthenticationInfo(null);
                 }
-
                 return null;
+            case HttpStatus.SC_FORBIDDEN:                      // 403
+            case 451:                                          // 451 Unavailable For Legal Reasons
+                // Stop retrying with the request
+                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Stop retrying with the request");
+                return null;
+            default:
+                // Retry the request to the API gateway
+                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Retry the request to the API gateway");
+                return getAuthenticationInfo(previousAuthResponseJson);
             }
-
-            // Authentication was successful. Deserialize the response and return it.
-            JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-            System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
-            System.out.println(responseJson.toString(2));
-            return responseJson;
-
         } catch (Exception e) {
             System.out.println("EDP-GW authentication failure:");
             e.printStackTrace();
@@ -356,7 +403,7 @@ public class MarketPriceEdpGwAuthentication {
      */
     public static void sendRequest(WebSocket websocket) throws JSONException {
         String requestJsonString;
-        requestJsonString = "{\"ID\":2,\"Key\":{\"Name\":\"" + ric + "\"}}";
+        requestJsonString = "{\"ID\":2,\"Key\":{\"Name\":\"" + ric + "\",\"Service\":\"" + service + "\"}}";
         JSONObject mpRequestJson = new JSONObject(requestJsonString);
         websocket.sendText(requestJsonString);
         System.out.println("SENT:\n" + mpRequestJson.toString(2));

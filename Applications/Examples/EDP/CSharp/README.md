@@ -32,18 +32,17 @@ Studio's NuGet extension; if enabled, they will be downloaded automatically when
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
-`--ric`          | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
-`--scope`        | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+Option            |Description|
+-----------------:|-----------|
+`--hostname`      | REQUIRED. Hostname of the Elektron Real-Time Service.
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. Defaults to 256.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
+`--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
+`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 
 ## Source File Description
 * `MarketPriceEdpGwAuthenticationExample.cs` - Source file for the MarketPriceEdpGwAuthentication example.
@@ -55,18 +54,18 @@ Option           |Description|
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--hotstandby`   | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
-`--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
-`--ric`          | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
-`--scope`        | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+Option            |Description|
+-----------------:|-----------|
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. Defaults to 256.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
+`--hotstandby`    | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
+`--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
+`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 
 ## Source File Description
 * `MarketPriceEdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceEdpGwServiceDiscovery example.

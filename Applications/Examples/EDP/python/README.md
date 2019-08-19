@@ -21,7 +21,7 @@ token included in the response from the Gateway instead of the username, clienti
 password. Once the new token is retrieved, they send a login request with this
 token over their WebSockets to the ERT Service.
 
-## Setup 
+## Setup
 ### Windows/Linux/macOS
 1. __Install Python__
     - Go to: <https://www.python.org/downloads/>
@@ -43,19 +43,18 @@ To run the example:
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--hostname`     | REQUIRED. Hostname of the Elektron Real-Time Service.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--port`         | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
-`--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
-`--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+Option            |Description|
+-----------------:|-----------|
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--hostname`      | REQUIRED. Hostname of the Elektron Real-Time Service.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
+`--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
+`--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
 ### Running the market\_price\_edpgw\_service\_discovery Example
 
@@ -65,19 +64,19 @@ To run the example:
 
 The command line options are:
 
-Option           |Description|
-----------------:|-----------|
-`--user`         | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
-`--password`     | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
-`--clientid`     | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
-`--hotstandby`   | OPTIONAL. Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
-`--auth_hostname`| OPTIONAL. Hostname of the EDP Gateway. Defaults to api.refinitiv.com.
-`--auth_port`    | OPTIONAL. Port of the EDP Gateway. Defaults to 443.
-`--scope`        | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--region`       | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
-`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
-`--app_id`       | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
-`--position`     | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+Option            |Description|
+-----------------:|-----------|
+`--user`          | REQUIRED. Username to use when authenticating via Username/Password to the Gateway.
+`--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
+`--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
+`--hotstandby`    | OPTIONAL. Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
+`--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
+`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
+`--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 
 ## Source File Description
 
