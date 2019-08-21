@@ -78,6 +78,7 @@ Option            |Description|
 `--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+`--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
 
 ### Running the MarketPriceEdpGwServiceDiscovery Example
 
@@ -101,6 +102,7 @@ Option            |Description|
 `--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+`--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
 
 ## Source File Description
 

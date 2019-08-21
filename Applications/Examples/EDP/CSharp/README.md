@@ -43,6 +43,7 @@ Option            |Description|
 `--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+`--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
 
 ## Source File Description
 * `MarketPriceEdpGwAuthenticationExample.cs` - Source file for the MarketPriceEdpGwAuthentication example.
@@ -66,6 +67,7 @@ Option            |Description|
 `--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+`--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
 
 ## Source File Description
 * `MarketPriceEdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceEdpGwServiceDiscovery example.
