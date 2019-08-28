@@ -67,7 +67,7 @@ Option            |Description|
 `--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
 `--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
 `--hotstandby`    | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
-`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer", "emea", or "apac". Defaults to "amer".
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.

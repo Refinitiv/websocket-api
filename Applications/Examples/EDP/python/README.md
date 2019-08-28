@@ -74,7 +74,7 @@ Option            |Description|
 `--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
 `--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
 `--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer", "emea", or "apac". Defaults to "amer".
 `--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
