@@ -52,10 +52,12 @@ Option            |Description|
 `--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
 `--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
-`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. Can provide several rics if they are separated by comma (','). If not specified, /TRI.N is requested.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--view`         | OPTIONAL. List of fields to show, separated by comma (','). If not specified, all fields with be returned.
+`--no_streaming` | OPTIONAL. Returns only one response and doest not stream the new events.
 
 ### Running the market\_price\_edpgw\_service\_discovery Example
 
@@ -75,10 +77,12 @@ Option            |Description|
 `--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
 `--scope`         | OPTIONAL. An authorization scope to include when authenticating. Defaults to 'trapi'.
 `--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer" or "emea". Defaults to "amer".
-`--ric`           | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. If not specified, /TRI.N is requested.
+`--ric`          | OPTIONAL. Name of the item to request from the Elektron Real-Time Service. Can provide several rics if they are separated by comma (','). If not specified, /TRI.N is requested.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--view`         | OPTIONAL. List of fields to show, separated by comma (','). If not specified, all fields with be returned.
+`--no_streaming` | OPTIONAL. Returns only one response and doest not stream the new events.
 
 ## Source File Description
 

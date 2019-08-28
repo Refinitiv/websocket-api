@@ -35,6 +35,8 @@ client_secret = ''
 scope = 'trapi'
 ric = '/TRI.N'
 service = 'ELEKTRON_DD'
+view = []
+no_streaming = False
 
 # Global Variables
 web_socket_app = None
@@ -78,7 +80,12 @@ def send_market_price_request(ric_name):
             'Name': ric_name,
             'Service': service
         },
+        'Streaming': not no_streaming,
     }
+
+    if view:
+        mp_req_json['View'] = view
+
     web_socket_app.send(json.dumps(mp_req_json))
     print("SENT:")
     print(json.dumps(mp_req_json, sort_keys=True, indent=2, separators=(',', ':')))
@@ -229,17 +236,17 @@ if __name__ == "__main__":
     # Get command line parameters
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "clientid=", "password=",
-                                                      "position=", "auth_url=", "scope=", "ric=", "service="])
+                                                      "position=", "auth_url=", "scope=", "ric=", "service=", "view=", "no_streaming"])
     except getopt.GetoptError:
         print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
               '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
-              '[--scope scope] [--ric ric] [--service service] [--help]')
+              '[--scope scope] [--ric ric] [--service service] [--view view] [--no_streaming] [--help]')
         sys.exit(2)
     for opt, arg in opts:
         if opt in "--help":
             print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
                   '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
-                  '[--scope scope] [--ric ric] [--service service] [--help]')
+                  '[--scope scope] [--ric ric] [--service service] [--view view] [--no_streaming] [--help]')
             sys.exit(0)
         elif opt in "--hostname":
             hostname = arg
@@ -263,6 +270,10 @@ if __name__ == "__main__":
             ric = arg
         elif opt in "--service":
             service = arg
+        elif opt in "--view":
+            view = arg.split(',')
+        elif opt in "--no_streaming":
+            no_streaming = True
 
     if user == '' or password == '' or  hostname == '' or clientid == '':
         print("user, clientid, password, and hostname are required options")

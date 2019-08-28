@@ -38,6 +38,8 @@ ric = '/TRI.N'
 service = 'ELEKTRON_DD'
 hostList = []
 hotstandby = False
+view = []
+no_streaming = False
 # Global Variables
 session2 = None
 
@@ -62,7 +64,12 @@ class WebSocketSession:
                 'Name': ric_name,
                 'Service': service
             },
+            'Streaming': not no_streaming,
         }
+
+        if view:
+            mp_req_json['View'] = view
+
         self.web_socket_app.send(json.dumps(mp_req_json))
         print("SENT on " + self.session_name + ":")
         print(json.dumps(mp_req_json, sort_keys=True, indent=2, separators=(',', ':')))
@@ -336,7 +343,8 @@ def get_sts_token(current_refresh_token, url=None):
 def print_commandline_usage_and_exit(exit_code):
     print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
           '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
-          '[--discovery_url discovery_url] [--scope scope] [--service service] [--region region] [--ric ric] [--hotstandby] [--help]')
+          '[--discovery_url discovery_url] [--scope scope] [--service service] [--region region] [--ric ric] [--hotstandby] '
+          '[--view view] [--no_streaming] [--help]')
     sys.exit(exit_code)
 
 
@@ -346,7 +354,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "app_id=", "user=", "clientid=", "password=",
                                                       "position=", "auth_url=", "discovery_url=", "scope=", "service=", "region=", "ric=",
-                                                      "hotstandby"])
+                                                      "hotstandby", "view=", "no_streaming"])
     except getopt.GetoptError:
         print_commandline_usage_and_exit(2)
     for opt, arg in opts:
@@ -376,9 +384,13 @@ if __name__ == "__main__":
                 print("Unknown region \"" + region + "\". The region must be either \"amer\", \"emea\", or \"apac\".")
                 sys.exit(1)
         elif opt in "--ric":
-            ric = arg
+            ric = arg.split(',')
         elif opt in "--hotstandby":
-                hotstandby = True
+            hotstandby = True
+        elif opt in "--view":
+            view = arg.split(',')
+        elif opt in "--no_streaming":
+            no_streaming = True
 
     if user == '' or password == '' or clientid == '':
         print("user, clientid and password are required options")
