@@ -27,7 +27,7 @@ file and build it.
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ### Linux
-```dotnet build CSharpEdpGwExample_VS150.sln```
+```dotnet build CSharpEdpGwExamples_VS150.sln```
 
 ## Command Line Usage
 ```dotnet MarketPriceEdpGwAuthenticationExample.dll --user <username> --password <password> --clientid clientID --hostname <Elektron Real-Time Service host>```
