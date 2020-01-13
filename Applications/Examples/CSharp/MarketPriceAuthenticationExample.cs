@@ -262,6 +262,17 @@ namespace MarketPriceAuthenticationExample
             Environment.Exit(1);
         }
 
+        /// <summary>
+        /// This gets called when an option that requires an argument is called
+        /// without one. Prints usage and exits with a failure status.
+        /// </summary>
+        /// <param name="option"></param>
+        void GripeAboutMissingOptionArgumentAndExit(string option)
+        {
+            Console.WriteLine("Error: {0} requires an argument.", option);
+            printCommandLineUsageAndExit(1);
+        }
+
         /// <summary>Parses command-line arguments.</summary>
         /// <param name="args">Command-line arguments passed to the application.</param>
         void parseCommandLine(string[] args)
@@ -273,30 +284,21 @@ namespace MarketPriceAuthenticationExample
                     case "-a":
                     case "--app_id":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _appId = args[i + 1];
                         ++i;
                         break;
 
                     case "--auth_hostname":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _authHostName = args[i + 1];
                         ++i;
                         break;
 
                     case "--auth_port":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _authPort = args[i + 1];
                         ++i;
                         break;
@@ -304,10 +306,7 @@ namespace MarketPriceAuthenticationExample
                     case "-h":
                     case "--hostname":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _hostName = args[i + 1];
                         ++i;
                         break;
@@ -315,10 +314,7 @@ namespace MarketPriceAuthenticationExample
                     case "-p":
                     case "--port":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _port = args[i + 1];
                         ++i;
                         break;
@@ -326,20 +322,14 @@ namespace MarketPriceAuthenticationExample
                     case "-u":
                     case "--user":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _userName = args[i + 1];
                         ++i;
                         break;
 
                     case "--password":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit(1);
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _password = args[i + 1];
                         ++i;
                         break;
