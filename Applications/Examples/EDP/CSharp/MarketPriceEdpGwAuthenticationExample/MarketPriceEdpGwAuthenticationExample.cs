@@ -17,6 +17,19 @@ using Newtonsoft.Json.Linq;
 
 namespace MarketPriceEdpGwAuthenticationExample
 {
+    /// <summary>
+    /// A host/port endpoint for connecting a service or socket.
+    /// </summary>
+    class Endpoint
+    {
+        public string Host { get; set; }
+        public int Port { get; set; } = -999;
+        public override string ToString()
+        {
+            return Host + ":" + Port;
+        }
+    }
+
     class MarketPriceEdpGwAuthenticationExample
     {
         /// <summary>The websocket used for retrieving market content.</summary>
@@ -29,11 +42,8 @@ namespace MarketPriceEdpGwAuthenticationExample
         private string _authToken;
         private string _refreshToken;
 
-        /// <summary>The configured hostname of the Websocket server.</summary>
-        private string _hostName;
-
-        /// <summary>The configured port used when opening the WebSocket.</summary>
-        private string _port = "443";
+        /// <summary>The endpoint to connect the Websocket server to.</summary>
+        private Endpoint _endpoint = new Endpoint() { Port = 443 };
 
         /// <summary>The full URL of the authentication server. If not specified,
         /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
@@ -205,7 +215,7 @@ namespace MarketPriceEdpGwAuthenticationExample
             _position = (hostEntry == null) ? "127.0.0.1/net" : hostEntry.ToString();
 
             /* Open a websocket. */
-            Uri uri = new Uri("wss://" + _hostName + ":" + _port + "/WebSocket");
+            Uri uri = new Uri("wss://" + _endpoint.Host + ":" + _endpoint.Port + "/WebSocket");
             Console.WriteLine("Connecting to WebSocket " + uri.AbsoluteUri + " ...");
 
             if (!GetAuthenticationInfo(false))
@@ -439,13 +449,13 @@ namespace MarketPriceEdpGwAuthenticationExample
                         _authUrl = args[++i];
                         break;
                     case "--hostname":
-                        _hostName = args[++i];
+                        _endpoint.Host = args[++i];
                         break;
                     case "--password":
                         _password = args[++i];
                         break;
                     case "--port":
-                        _port = args[++i];
+                        _endpoint.Port = Int32.Parse(args[++i]);
                         break;
                     case "--ric":
                         _ric = args[++i];
@@ -475,7 +485,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 PrintCommandLineUsageAndExit();
             }
 
-            if (_hostName == null)
+            if (_endpoint.Host == null)
             {
                 Console.WriteLine("hostname must be specified on the command line");
                 PrintCommandLineUsageAndExit();

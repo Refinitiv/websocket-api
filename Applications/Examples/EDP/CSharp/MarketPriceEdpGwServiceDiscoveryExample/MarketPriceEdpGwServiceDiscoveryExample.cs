@@ -38,6 +38,19 @@ using Newtonsoft.Json.Linq;
 
 namespace MarketPriceEdpGwServiceDiscoveryExample
 {
+    /// <summary>
+    /// A host/port endpoint for connecting a service or socket.
+    /// </summary>
+    class Endpoint
+    {
+        public string Host { get; set; }
+        public int Port { get; set; } = -999;
+        public override string ToString()
+        {
+            return Host + ":" + Port;
+        }
+    }
+
     class MarketPriceEdpGwServiceDiscoveryExample
     {
         /// <summary>The websocket(s) used for retrieving market content.</summary>
@@ -89,7 +102,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         private static string _region = "amer";
 
         /// <summary>hosts returned by service discovery</summary>
-        private static List<Tuple<string,string>> _hosts = new List<Tuple<string, string>>();
+        private static List<Endpoint> _hosts = new List<Endpoint>();
 
         /// <summary> Specifies buffer size for each read from WebSocket.</summary>
         private static readonly int BUFFER_SIZE = 8192;
@@ -114,7 +127,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             /// <summary> URI to connect the WebSocket to. </summary>
             private Uri _uri;
 
-            public WebSocketSession(String name, String host, String port)
+            public WebSocketSession(String name, String host, int port)
             {
                 Name = name;
                 _uri = new Uri("wss://" + host + ":" + port + "/WebSocket");
@@ -492,12 +505,20 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
                         if (_hotstandby && locations.Count == 1)
                         {
-                            _hosts.Add(new Tuple<string,string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            _hosts.Add(new Endpoint
+                            {
+                                Host = (endpoints[i]["endpoint"]).ToString(),
+                                Port = Int32.Parse((endpoints[i]["port"]).ToString())
+                            });
                             continue;
                         }
                         if (!_hotstandby && locations.Count == 2)
                         {
-                            _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            _hosts.Add(new Endpoint
+                            {
+                                Host = (endpoints[i]["endpoint"]).ToString(),
+                                Port = Int32.Parse((endpoints[i]["port"]).ToString())
+                            });
                             continue;
                         }
                     }
@@ -599,7 +620,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             /* Open websocket(s) */
             foreach (var host in _hosts)
             {
-                var webSocketSession = new WebSocketSession("Session" + (_webSocketSessions.Count + 1), host.Item1, host.Item2);
+                var webSocketSession = new WebSocketSession("Session" + (_webSocketSessions.Count + 1), host.Host, host.Port);
                 _webSocketSessions.Add(webSocketSession.Name, webSocketSession);
 
                 Task.Factory.StartNew(() =>
