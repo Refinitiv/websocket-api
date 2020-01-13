@@ -38,14 +38,34 @@ using Newtonsoft.Json.Linq;
 
 namespace MarketPriceEdpGwServiceDiscoveryExample
 {
+    /// <summary>
+    /// The tokens for a user authentication via the Elektron authentication service.
+    /// </summary>
+    class Authentication
+    {
+        /// <summary>Authentication token retrieved from the authentication server.</summary>
+        public string AuthToken { get; set; }
+        /// <summary>Refresh token for refreshing this authentication.</summary>
+        public string RefreshToken { get; set; }
+        /// <summary>The time when this token expires; must re-authenticate before then.</summary>
+        public DateTime ExpirationTime { get; set; } = DateTime.MaxValue;
+
+        public override string ToString()
+        {
+            // Redact tokens in default display because they are sensitive info.
+            string redacted = "******";
+            return "[Authentication: AuthToken=" + redacted + ", RefreshToken=" + redacted
+                + ", ExpirationTime=" + ExpirationTime + "]";
+        }
+    }
+
     class MarketPriceEdpGwServiceDiscoveryExample
     {
         /// <summary>The websocket(s) used for retrieving market content.</summary>
         private static Dictionary<string, WebSocketSession> _webSocketSessions = new Dictionary<string, WebSocketSession>();
 
-        /// <summary>The tokens retrieved from the authentication server.
-        private static string _authToken;
-        private static string _refreshToken;
+        /// <summary>The authentication tokesn from the authentication server.</summary>
+        private static Authentication _auth;
 
         /// <summary>The full URL of the authentication server. If not specified,
         /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
@@ -78,9 +98,6 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
         /// <summary>The IP address, used as the application's position when requesting the token.</summary>
         private static string _position;
-
-        /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
-        private static int _expiration_in_ms = Timeout.Infinite;
 
         /// <summary>indicates whether application should support hotstandby</summary>
         private static bool _hotstandby = false;
@@ -193,7 +210,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             {
                 string msg = "{" + "\"ID\":1," + "\"Domain\":\"Login\"," + "\"Key\": {\"NameType\":\"AuthnToken\"," +
                     "\"Elements\":{\"ApplicationId\":\"" + _appID + "\"," + "\"Position\":\"" + _position + "\"," +
-                    "\"AuthenticationToken\":\"" + _authToken + "\"}}";
+                    "\"AuthenticationToken\":\"" + _auth.AuthToken + "\"}}";
                 if (isRefresh)
                     msg += ",\"Refresh\": false";
                 msg += "}";
@@ -329,7 +346,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                 /* Send username and password in request. */
                 string postString = "username=" + _username + "&client_id=" + _clientId;
                 if (isRefresh)
-                    postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
+                    postString += "&grant_type=refresh_token&refresh_token=" + _auth.RefreshToken;
                 else
                 {
                     postString += "&takeExclusiveSignOnControl=True";
@@ -356,10 +373,22 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // other possible items: auth_token, refresh_token, expires_in
-                    _authToken = msg["access_token"].ToString();
-                    _refreshToken = msg["refresh_token"].ToString();
-                    if (Int32.TryParse(msg["expires_in"].ToString(), out _expiration_in_ms))
-                        _expiration_in_ms *= 1000;
+                    DateTime expiration_time;
+                    if (Int32.TryParse(msg["expires_in"].ToString(), out int expiration_in_s_from_now))
+                    {
+                        int expiration_in_ms_from_now = expiration_in_s_from_now * 1000;
+                        expiration_time = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, expiration_in_ms_from_now));
+                    }
+                    else
+                    {
+                        expiration_time = DateTime.MaxValue;
+                    }
+                    _auth = new Authentication
+                    {
+                        AuthToken = msg["access_token"].ToString(),
+                        RefreshToken = msg["refresh_token"].ToString(),
+                        ExpirationTime = expiration_time
+                    };
                 }
 
                 webResponse.Close();
@@ -443,7 +472,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
             Console.WriteLine("Sending service discovery request to {0}\n", param_url);
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(param_url);
-            webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
+            webRequest.Headers.Add("Authorization", "Bearer " + _auth.AuthToken);
             webRequest.AllowAutoRedirect = false;
             webRequest.UserAgent = "CSharpMarketPriceEdpGwServiceDiscoveryExample";
             try
@@ -613,10 +642,13 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     break;
             }
 
-            // after 90% of the time allowed before the token expires, retrive a new set of tokens and send a login to each open websocket
+            // after 90% of the time allowed before the token expires, retrieve a new set of tokens and send a login to each open websocket
             while (true)
             {
-                Thread.Sleep((int)(_expiration_in_ms * .90));
+                var timeToAuthExpiration = _auth.ExpirationTime - DateTime.Now;
+                int msToExpiration = (int)(timeToAuthExpiration.TotalSeconds * 1000);
+                int msToSleep = (int)(0.9 * (double)msToExpiration);
+                Thread.Sleep(msToSleep);
 
                 if (!GetAuthenticationInfo(true))
                     Console_CancelKeyPress(null, null);

@@ -17,6 +17,27 @@ using Newtonsoft.Json.Linq;
 
 namespace MarketPriceEdpGwAuthenticationExample
 {
+    /// <summary>
+    /// The tokens for a user authentication via the Elektron authentication service.
+    /// </summary>
+    class Authentication
+    {
+        /// <summary>Authentication token retrieved from the authentication server.</summary>
+        public string AuthToken { get; set; }
+        /// <summary>Refresh token for refreshing this authentication.</summary>
+        public string RefreshToken { get; set; }
+        /// <summary>The time when this token expires; must re-authenticate before then.</summary>
+        public DateTime ExpirationTime { get; set; } = DateTime.MaxValue;
+
+        public override string ToString()
+        {
+            // Redact tokens in default display because they are sensitive info.
+            string redacted = "******";
+            return "[Authentication: AuthToken=" + redacted + ", RefreshToken=" + redacted
+                + ", ExpirationTime=" + ExpirationTime + "]";
+        }
+    }
+
     class MarketPriceEdpGwAuthenticationExample
     {
         /// <summary>The websocket used for retrieving market content.</summary>
@@ -25,9 +46,8 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>Indicates whether we have successfully logged in.</summary>
         private bool _loggedIn = false;
 
-        /// <summary>The tokens retrieved from the authentication server.
-        private string _authToken;
-        private string _refreshToken;
+        /// <summary>The authentication tokens retrieved from the authentication server.</summary>
+        private Authentication _auth;
 
         /// <summary>The configured hostname of the Websocket server.</summary>
         private string _hostName;
@@ -63,9 +83,6 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>The IP address, used as the application's position when requesting the token.</summary>
         private string _position;
 
-        /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
-        private int _expirationInMilliSeconds = Timeout.Infinite;
-
         /// <summary> Specifies buffer size for each read from WebSocket.</summary>
         private static readonly int BUFFER_SIZE = 8192;
 
@@ -95,7 +112,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                 /* Send username and password in request. */
                 string postString = "username=" + _userName + "&client_id=" + _clientId;
                 if (isRefresh)
-                    postString += "&grant_type=refresh_token&refresh_token=" + _refreshToken;
+                    postString += "&grant_type=refresh_token&refresh_token=" + _auth.RefreshToken;
                 else
                 {
                     postString += "&takeExclusiveSignOnControl=True";
@@ -122,10 +139,22 @@ namespace MarketPriceEdpGwAuthenticationExample
                     Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // other possible items: auth_token, refresh_token, expires_in
-                    _authToken = msg["access_token"].ToString();
-                    _refreshToken = msg["refresh_token"].ToString();
-                    if (Int32.TryParse(msg["expires_in"].ToString(), out _expirationInMilliSeconds))
-                        _expirationInMilliSeconds *= 1000;
+                    DateTime expiration_time;
+                    if (Int32.TryParse(msg["expires_in"].ToString(), out int expiration_in_s_from_now))
+                    {
+                        int expiration_in_ms_from_now = expiration_in_s_from_now * 1000;
+                        expiration_time = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, expiration_in_ms_from_now));
+                    }
+                    else
+                    {
+                        expiration_time = DateTime.MaxValue;
+                    }
+                    _auth = new Authentication
+                    {
+                        AuthToken = msg["access_token"].ToString(),
+                        RefreshToken = msg["refresh_token"].ToString(),
+                        ExpirationTime = expiration_time
+                    };
                 }
 
                 webResponse.Close();
@@ -244,7 +273,10 @@ namespace MarketPriceEdpGwAuthenticationExample
 
                     while (true)
                     {
-                        Thread.Sleep((int)(_expirationInMilliSeconds * .90));
+                        var timeToAuthExpiration = _auth.ExpirationTime - DateTime.Now;
+                        int msToExpiration = (int)(timeToAuthExpiration.TotalSeconds * 1000);
+                        int msToSleep = (int)(0.9 * (double)msToExpiration);
+                        Thread.Sleep(msToSleep);
                         if (_loggedIn)
                         {
                             if (!GetAuthenticationInfo(true))
@@ -355,7 +387,7 @@ namespace MarketPriceEdpGwAuthenticationExample
             string msg;
             msg = "{" + "\"ID\":1," + "\"Domain\":\"Login\"," + "\"Key\": {\"NameType\":\"AuthnToken\"," +
                 "\"Elements\":{\"ApplicationId\":\"" + _appId + "\"," + "\"Position\":\"" + _position + "\"," +
-                "\"AuthenticationToken\":\"" + _authToken + "\"}}";
+                "\"AuthenticationToken\":\"" + _auth.AuthToken + "\"}}";
             if (isRefresh)
                 msg += ",\"Refresh\": false";
             msg += "}";
