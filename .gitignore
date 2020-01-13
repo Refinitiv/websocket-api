@@ -2,3 +2,6 @@
 node_modules/
 .DS_Store
 xcuserdata/*
+.vs
+packages/
+obj/
