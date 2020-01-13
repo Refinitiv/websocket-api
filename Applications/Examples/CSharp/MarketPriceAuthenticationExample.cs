@@ -275,7 +275,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _appId = args[i + 1];
                         ++i;
@@ -285,7 +285,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _authHostName = args[i + 1];
                         ++i;
@@ -295,7 +295,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _authPort = args[i + 1];
                         ++i;
@@ -306,7 +306,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _hostName = args[i + 1];
                         ++i;
@@ -317,7 +317,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _port = args[i + 1];
                         ++i;
@@ -328,7 +328,7 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _userName = args[i + 1];
                         ++i;
@@ -338,15 +338,19 @@ namespace MarketPriceAuthenticationExample
                         if (i + 1 >= args.Length)
                         {
                             Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
+                            printCommandLineUsageAndExit(1);
                         }
                         _password = args[i + 1];
                         ++i;
                         break;
 
+                    case "--help":
+                        printCommandLineUsageAndExit(0);
+                        break;
+
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
-                        printCommandLineUsageAndExit();
+                        printCommandLineUsageAndExit(1);
                         break;
 
                 }
@@ -358,10 +362,20 @@ namespace MarketPriceAuthenticationExample
         }
 
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
-        void printCommandLineUsageAndExit()
+        void printCommandLineUsageAndExit(int exitStatus)
         {
-            Console.WriteLine("Usage: {0} [ -h hostname ] [-p port] [-a appID] [-u user] [--password password] [--auth_hostname hostname] [--auth_port port]", System.AppDomain.CurrentDomain.FriendlyName);
-            Environment.Exit(1);
+            Console.WriteLine("Usage:\n" +
+                "dotnet {0}.dll\n" +
+                "   [-h|--hostname <hostname>]  \n" +
+                "   [-p|--port <port>]          \n" +
+                "   [-a|--app_id <appId>]       \n" +
+                "   [-u|--user <user>]          # Your Refinitiv Elektron username\n" +
+                "   [--password <password>]     # Your Refinitiv Elektron password\n" +
+                "   [--auth_hostname <host>]    # Hostname for the Refinitiv Elektron authentication service\n" +
+                "   [--auth_port <port>]        # Port for the Refinitiv Elektron authentication service\n" +
+                "   [--help]                    # Display this help screen and exit\n",
+                System.AppDomain.CurrentDomain.FriendlyName);
+            Environment.Exit(exitStatus);
         }
     }
 }
