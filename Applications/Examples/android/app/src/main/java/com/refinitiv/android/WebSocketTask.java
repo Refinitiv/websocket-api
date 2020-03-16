@@ -2,11 +2,11 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|           Copyright Thomson Reuters 2017. All rights reserved.            --
+//|           Copyright (C) 2019 Refinitiv. All rights reserved.              --
 //|-----------------------------------------------------------------------------
 
 
-package com.thomsonreuters.android;
+package com.refinitiv.android;
 
 import android.os.AsyncTask;
 import android.widget.TextView;
@@ -44,7 +44,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
- * Created by thomsonreuters on 12/9/2016.
+ * Created on 12/9/2016.
  */
 public class WebSocketTask extends AsyncTask<Void, String, Void> {
 

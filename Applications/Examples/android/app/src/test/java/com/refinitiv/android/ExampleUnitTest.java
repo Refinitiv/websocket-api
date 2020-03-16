@@ -1,4 +1,4 @@
-package com.thomsonreuters.android;
+package com.refinitiv.android;
 
 import org.junit.Test;
 

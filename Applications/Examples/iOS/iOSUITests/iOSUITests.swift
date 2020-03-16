@@ -2,8 +2,7 @@
 //  iOSUITests.swift
 //  iOSUITests
 //
-//  Created by Thomson Reuters on 1/19/17.
-//  Copyright © 2017 Thomson Reuters. All rights reserved.
+//  Copyright © 2019 Refinitiv. All rights reserved.
 //
 
 import XCTest

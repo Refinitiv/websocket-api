@@ -1,5 +1,5 @@
 <ivy-module version="2.0">
-    <info organisation="thomsonreuters" module="examples"/>
+    <info organisation="refinitiv" module="examples"/>
     <dependencies>
         <dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.3"/>
 		<dependency org="commons-cli" name="commons-cli" rev="1.3"/>
