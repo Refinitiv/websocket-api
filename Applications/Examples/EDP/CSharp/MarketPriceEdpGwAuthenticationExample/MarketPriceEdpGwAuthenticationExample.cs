@@ -36,8 +36,8 @@ namespace MarketPriceEdpGwAuthenticationExample
         private string _port = "443";
 
         /// <summary>The full URL of the authentication server. If not specified,
-        /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
-        private string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
+        /// https://api.refinitiv.com:443/auth/oauth2/v1/token is used.</summary>
+        private string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
 
         /// <summary>The configured username used when requesting the token.</summary>
         private string _userName;

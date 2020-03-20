@@ -47,8 +47,8 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         private static string _refreshToken;
 
         /// <summary>The full URL of the authentication server. If not specified,
-        /// https://api.refinitiv.com:443/auth/oauth2/beta1/token is used.</summary>
-        private static string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
+        /// https://api.refinitiv.com:443/auth/oauth2/v1/token is used.</summary>
+        private static string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
 
         /// <summary>The full URL of the EDP service discovery server. If not specified,
         /// https://api.refinitiv.com/streaming/pricing/v1/ is used.</summary>

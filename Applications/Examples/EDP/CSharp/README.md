@@ -42,7 +42,7 @@ Option            |Description|
 `--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
 `--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/v1/token.
 `--port`          | OPTIONAL. Port of the Elektron Real-Time Service. Defaults to 443.
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
@@ -64,7 +64,7 @@ Option            |Description|
 `--password`      | REQUIRED. Password to use when authenticating via Username/Password to the Gateway.
 `--clientid`      | REQUIRED. Client ID aka AppKey generated using AppGenerator, to use when authenticating with Gateway.
 `--app_id`        | OPTIONAL. Application ID to use when logging in. Defaults to 256.
-`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/beta1/token.
+`--auth_url`      | OPTIONAL. URL of the EDP Gateway. Defaults to https://api.refinitiv.com:443/auth/oauth2/v1/token.
 `--discovery_url` | OPTIONAL. URL of the Service Discovery EDP Gateway. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
 `--hotstandby`    | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
 `--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. The region is either "amer", "emea", or "apac". Defaults to "amer".

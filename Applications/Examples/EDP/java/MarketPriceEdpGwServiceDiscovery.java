@@ -58,7 +58,7 @@ public class MarketPriceEdpGwServiceDiscovery {
     public static String position = "";
     public static String appId = "256";
     public static String password = "";
-    public static String authUrl = "https://api.refinitiv.com:443/auth/oauth2/beta1/token";
+    public static String authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
     public static String discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
     public static String ric = "/TRI.N";
     public static String service = "ELEKTRON_DD";

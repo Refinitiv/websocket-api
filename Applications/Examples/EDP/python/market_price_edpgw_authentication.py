@@ -22,7 +22,7 @@ import threading
 
 # Global Default Variables
 app_id = '256'
-auth_url = 'https://api.refinitiv.com:443/auth/oauth2/beta1/token'
+auth_url = 'https://api.refinitiv.com:443/auth/oauth2/v1/token'
 hostname = ''
 password = ''
 position = ''

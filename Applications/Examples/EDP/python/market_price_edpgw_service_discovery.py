@@ -23,7 +23,7 @@ import threading
 
 # Global Default Variables
 app_id = '256'
-auth_url = 'https://api.refinitiv.com:443/auth/oauth2/beta1/token'
+auth_url = 'https://api.refinitiv.com:443/auth/oauth2/v1/token'
 discovery_url = 'https://api.refinitiv.com/streaming/pricing/v1/'
 password = ''
 position = ''
