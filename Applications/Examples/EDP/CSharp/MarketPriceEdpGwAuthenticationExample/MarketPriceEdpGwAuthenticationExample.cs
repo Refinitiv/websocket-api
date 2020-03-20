@@ -66,6 +66,9 @@ namespace MarketPriceEdpGwAuthenticationExample
         /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
         private int _expirationInMilliSeconds = Timeout.Infinite;
 
+        /// <summary>Expiration time returned by password (ho refresh) request</summary>
+        private int _originalExpirationInMilliSeconds = Timeout.Infinite;
+
         /// <summary> Specifies buffer size for each read from WebSocket.</summary>
         private static readonly int BUFFER_SIZE = 8192;
 
@@ -126,6 +129,8 @@ namespace MarketPriceEdpGwAuthenticationExample
                     _refreshToken = msg["refresh_token"].ToString();
                     if (Int32.TryParse(msg["expires_in"].ToString(), out _expirationInMilliSeconds))
                         _expirationInMilliSeconds *= 1000;
+                    if (!isRefresh)
+                        _originalExpirationInMilliSeconds = _expirationInMilliSeconds;
                 }
 
                 webResponse.Close();
@@ -249,6 +254,13 @@ namespace MarketPriceEdpGwAuthenticationExample
                         {
                             if (!GetAuthenticationInfo(true))
                                 Environment.Exit(1);
+                            if (_expirationInMilliSeconds != _originalExpirationInMilliSeconds)
+                            {
+                                System.Console.WriteLine("expire time changed from " + _originalExpirationInMilliSeconds / 1000
+                                    + " sec to " + _expirationInMilliSeconds / 1000 + " sec; retry with password");
+                                if (!GetAuthenticationInfo(false))
+                                    Environment.Exit(1);
+                            }
                             SendLogin(true);
                         }
 

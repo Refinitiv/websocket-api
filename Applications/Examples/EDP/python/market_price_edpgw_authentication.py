@@ -40,6 +40,7 @@ service = 'ELEKTRON_DD'
 web_socket_app = None
 web_socket_open = False
 logged_in = False
+original_expire_time = '0'; 
 
 
 def process_message(message_json):
@@ -280,6 +281,8 @@ if __name__ == "__main__":
     if not sts_token:
         sys.exit(1)
 
+    original_expire_time = expire_time
+
     # Start websocket handshake
     ws_address = "wss://{}:{}/WebSocket".format(hostname, port)
     print("Connecting to WebSocket " + ws_address + " ...")
@@ -295,15 +298,19 @@ if __name__ == "__main__":
 
     try:
         while True:
-            # Give 30 seconds to obtain the new security token and send reissue
-            if int(expire_time) > 30:
-                time.sleep(int(expire_time) - 30)
-            else:
-                # Fail the refresh since value too small
-                sys.exit(1)
+            #  Continue using current token until 90% of initial time before it expires.
+            time.sleep(int(float(expire_time) * 0.90))
+
             sts_token, refresh_token, expire_time = get_sts_token(refresh_token)
             if not sts_token:
                 sys.exit(1)
+ 
+            if int(expire_time) != int(original_expire_time):
+               print('expire time changed from ' + str(original_expire_time) + ' sec to ' + str(expire_time) + ' sec; retry with password')
+               sts_token, refresh_token, expire_time = get_sts_token(None)
+               if not sts_token:
+                   sys.exit(1) 
+               original_expire_time = expire_time 
 
             # Update token.
             if logged_in:

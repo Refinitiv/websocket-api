@@ -5,7 +5,6 @@
 //|            Copyright (C) 2019 Refinitiv. All rights reserved.             --
 //|-----------------------------------------------------------------------------
 
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,6 +80,9 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
         /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
         private static int _expiration_in_ms = Timeout.Infinite;
+
+        /// <summary>Expiration time returned by password (ho refresh) request</summary>
+        private int _original_expiration_in_ms = Timeout.Infinite;
 
         /// <summary>indicates whether application should support hotstandby</summary>
         private static bool _hotstandby = false;
@@ -360,6 +362,8 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     _refreshToken = msg["refresh_token"].ToString();
                     if (Int32.TryParse(msg["expires_in"].ToString(), out _expiration_in_ms))
                         _expiration_in_ms *= 1000;
+                    if (!isRefresh)
+                        _original_expiration_in_ms = _expiration_in_ms;
                 }
 
                 webResponse.Close();
@@ -620,6 +624,13 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
 
                 if (!GetAuthenticationInfo(true))
                     Console_CancelKeyPress(null, null);
+                if (_expiration_in_ms != _original_expiration_in_ms)
+                {
+                    System.Console.WriteLine("expire time changed from " + _original_expiration_in_ms / 1000
+                        + " sec to " + _expiration_in_ms / 1000 + " sec; retry with password");
+                    if (!GetAuthenticationInfo(false))
+                        Console_CancelKeyPress(null, null);
+                }
 
                 foreach (var webSocketSession in _webSocketSessions)
                 {

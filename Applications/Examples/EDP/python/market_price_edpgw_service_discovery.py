@@ -41,6 +41,7 @@ hotstandby = False
 # Global Variables
 session2 = None
 
+original_expire_time = '0'; 
 
 class WebSocketSession:
     logged_in = False
@@ -396,6 +397,8 @@ if __name__ == "__main__":
     if not sts_token:
         sys.exit(1)
 
+    original_expire_time = expire_time
+
     # Query VIPs from EDP service discovery
     if not query_service_discovery():
         print("Failed to retrieve endpoints from EDP Service Discovery. Exiting...")
@@ -411,15 +414,19 @@ if __name__ == "__main__":
 
     try:
         while True:
-            # Give 30 seconds to obtain the new security token and send reissue
-            if int(expire_time) > 30:
-                time.sleep(int(expire_time) - 30)
-            else:
-                # Fail the refresh since value too small
-                sys.exit(1)
+            #  Continue using current token until 90% of initial time before it expires.
+            time.sleep(int(float(expire_time) * 0.90))
+
             sts_token, refresh_token, expire_time = get_sts_token(refresh_token)
             if not sts_token:
                 sys.exit(1)
+
+            if int(expire_time) != int(original_expire_time):
+               print('expire time changed from ' + str(original_expire_time) + ' sec to ' + str(expire_time) + ' sec; retry with password')
+               sts_token, refresh_token, expire_time = get_sts_token(None)
+               if not sts_token:
+                   sys.exit(1) 
+               original_expire_time = expire_time
 
             # Update token.
             session1.refresh_token()

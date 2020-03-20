@@ -146,19 +146,25 @@ public class MarketPriceEdpGwAuthentication {
             ws = connect();
 
             while(true) {
-                if (expireTime < 30)
-                {
-                    System.out.println("Expire time is too small, exiting.");
-                    System.exit(1);
-                }
-
-                // Continue using current token until 30 seconds before it expires.
-                Thread.sleep((expireTime - 30) * 1000);
+                // Continue using current token until 90% of initial time before it expires.
+                Thread.sleep(expireTime * 900);  // The value 900 means 90% of expireTime in milliseconds
 
                 // Connect to the gateway and re-authenticate, using the refresh token provided in the previous response
                 authJson = getAuthenticationInfo(authJson);
                 if (authJson == null)
                     System.exit(1);
+
+                // If expiration time returned by refresh request is less then initial expiration time,
+                // re-authenticate using password
+                int refreshingExpireTime = Integer.parseInt(authJson.getString("expires_in"));
+                if (refreshingExpireTime != expireTime) {
+                	System.out.println("expire time changed from " + expireTime + " sec to " + refreshingExpireTime + 
+                    		" sec; retry with password");
+                    authJson = getAuthenticationInfo(null);
+                    if (authJson == null)
+                        System.exit(1);
+                    expireTime = Integer.parseInt(authJson.getString("expires_in"));
+                }
 
                 // Send the updated access token over the WebSocket.
                 sendLoginRequest(ws, authJson.getString("access_token"), false);
