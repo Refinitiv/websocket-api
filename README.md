@@ -18,8 +18,6 @@ The examples are found under the Applications/Examples folder. Examples are prov
 * Perl
 * Node.js
 * Go
-* Swift (iOS)
-* Java (Android)
 * R
 * Ruby
 
