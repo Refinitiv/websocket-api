@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 using System;
@@ -18,9 +18,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 /*
- * This example demonstrates retrieving JSON-formatted market content from a WebSocket server,
- * using a token retrieved from an authentication service and using websocket server requests
- * extracted from a service discovery request.
+ * This example demonstrates authenticating via Refinitiv Data Platform, using an
+ * authentication token to discover Refinitiv Real-Time service endpoint, and
+ * using the endpoint and authentitcation to retrieve market content.  
+ *
+ * This example maintains a session by proactively renewing the authentication 
+ * token before expiration.
  *
  * This example can run with optional hotstandby support. Without this support, the application
  * will use a load-balanced interface with two hosts behind the load balancer. With hot standly
@@ -28,12 +31,17 @@ using Newtonsoft.Json.Linq;
  * each of the hosts.
  *
  * It performs the following steps:
- * - Sends an HTTP request to the authentication server and retrieves a token.
- * - Sends an HTTP request to the service discovery server and retrieves the
- *   servers that support streaming pricing via websockets
- * - Connects to the WebSocket server(s) using the authentication token.
- * - Requests TRI.N market-price content.
- * - Prints the response content.
+ * - Authenticating via HTTP Post request to Refinitiv Data Platform 
+ * - Retrieving service endpoints from Service Discovery via HTTP Get request, 
+ *   using the token retrieved from Refinitiv Data Platform  
+ * - Opening a WebSocket (or two, if the --hotstandby option is specified) to
+ *   a Refinitiv Real-Time Service endpoint, as retrieved from Service Discovery
+ * - Sending Login into the Real-Time Service using the token retrieved
+ *   from Refinitiv Data Platform.
+ * - Requesting market-price content.
+ * - Printing the response content.
+ * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+ *   providing the updated token to the Real-Time endpoint before token expiration.
  */
 
 namespace MarketPriceEdpGwServiceDiscoveryExample
@@ -70,7 +78,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// https://api.refinitiv.com:443/auth/oauth2/v1/token is used.</summary>
         private static string _authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
 
-        /// <summary>The full URL of the EDP service discovery server. If not specified,
+        /// <summary>The full URL of the Refinitiv Data Platform service discovery server. If not specified,
         /// https://api.refinitiv.com/streaming/pricing/v1/ is used.</summary>
         private static string _discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
 
@@ -110,7 +118,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// <summary>indicates whether application should support hotstandby</summary>
         private static bool _hotstandby = false;
 
-        /// <summary> Specifies a region to get endpoint(s) from the EDP-RT service discovery</summary>
+        /// <summary> Specifies a region to get endpoint(s) from the Refinitiv Data Platform service discovery</summary>
         private static string _region = "amer";
 
         /// <summary>hosts returned by service discovery</summary>
@@ -411,7 +419,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         case HttpStatusCode.TemporaryRedirect: // 307
                         case (HttpStatusCode)308:              // 308 Permanent Redirect
                             // Perform URL redirect
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             string newHost = response.Headers.Get("Location");
                             if (!string.IsNullOrEmpty(newHost))
                                 ret = GetAuthenticationInfo(isRefresh, newHost);
@@ -419,7 +427,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         case HttpStatusCode.BadRequest:        // 400
                         case HttpStatusCode.Unauthorized:      // 401
                             // Retry with username and password
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             if (isRefresh)
                             {
                                 Console.WriteLine("Retry with username and password");
@@ -431,14 +439,14 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         case HttpStatusCode.Forbidden:         // 403
                         case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
                             // Stop retrying with the request
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             Console.WriteLine("Stop retrying with the request");
                             ret = false;
                             break;
                         default:
-                            // Retry the request to the API gateway
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
-                            Console.WriteLine("Retry the request to the API gateway");
+                            // Retry the request to Refinitiv Data Platform 
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Retry the request to Refinitiv Data Platform");
                             ret = GetAuthenticationInfo(isRefresh);
                             break;
                     }
@@ -458,7 +466,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         }
 
         /// <summary>
-        /// Requests EDP service discovery to get endpoint(s) for EDP-RT
+        /// Requests Refinitiv Data Platform service discovery to get endpoint(s) to connect to Refinitiv Real-Time - Optimized 
         /// </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
         public static bool DiscoverServices(string url = null)
@@ -541,7 +549,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     {
                         if (_hosts.Count == 0)
                         {
-                            Console.WriteLine("No host found from EDP service discovery");
+                            Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
                             System.Environment.Exit(1);
                         }
                     }
@@ -568,7 +576,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         case HttpStatusCode.TemporaryRedirect: // 307
                         case (HttpStatusCode)308:              // 308 Permanent Redirect
                             // Perform URL redirect
-                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
 
                             string newHost = response.Headers.Get("Location");
                             if (!string.IsNullOrEmpty(newHost))
@@ -582,13 +590,13 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                         case HttpStatusCode.Forbidden:         // 403
                         case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
                             // Stop retrying with the request
-                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             Console.WriteLine("Stop retrying with the request");
                             ret = false;
                             break;
                         default:
                             // Retry the service discovery request
-                            Console.WriteLine("EDP-GW service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             Console.WriteLine("Retry the service discovery request");
                             ret = DiscoverServices();
                             break;
@@ -834,7 +842,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
                     Console.WriteLine("Password must contain characters belonging to at least "
                         + Policy.passwordMinNumberOfCategories
                         + " of the following four categories:\n"
-                        + "uppercase letters, lovercase letters, digits, and special characters.\n");
+                        + "uppercase letters, lowercase letters, digits, and special characters.\n");
                     Environment.Exit(1);
                 }
 

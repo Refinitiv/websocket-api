@@ -3,12 +3,26 @@
 #|            This source code is provided under the Apache 2.0 license      --
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 #|                See the project's LICENSE.md for details.                  --
-#|            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+#|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 #|-----------------------------------------------------------------------------
+
 """
-Simple example of authenticating to EDP-GW and using the token to login and
-retrieve MarketPrice content.  A username and password are used to retrieve
-this token.
+  This example demonstrates authenticating via Refinitiv Data Platform, using an
+  authentication token and a Refinitiv Real-Time service endpoint to retrieve
+  market content.
+ 
+  This example maintains a session by proactively renewing the authentication
+  token before expiration.
+ 
+  It performs the following steps:
+  - Authenticating via HTTP Post request to Refinitiv Data Platform
+  - Opening a WebSocket to a specified Refinitiv Real-Time Service endpoint (host/port)
+  - Sending Login into the Real-Time Service using the token retrieved
+    from Refinitiv Data Platform.
+  - Requesting market-price content.
+  - Printing the response content.
+  - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+    providing the updated token to the Real-Time endpoint before token expiration.
 """
 
 import sys
@@ -193,18 +207,18 @@ def get_sts_token(current_refresh_token, url=None):
                       allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
-        print('EDP-GW authentication exception failure:', e)
+        print('Refinitiv Data Platform authentication exception failure:', e)
         return None, None, None
 
     if r.status_code == 200:
         auth_json = r.json()
-        print("EDP-GW Authentication succeeded. RECEIVED:")
+        print("Refinitiv Data Platform Authentication succeeded. RECEIVED:")
         print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         return auth_json['access_token'], auth_json['refresh_token'], auth_json['expires_in']
     elif r.status_code == 301 or r.status_code == 302 or r.status_code == 307 or r.status_code == 308:
         # Perform URL redirect
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         new_host = r.headers['Location']
         if new_host is not None:
             print('Perform URL redirect to ', new_host)
@@ -212,7 +226,7 @@ def get_sts_token(current_refresh_token, url=None):
         return None, None, None
     elif r.status_code == 400 or r.status_code == 401:
         # Retry with username and password
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         if current_refresh_token:
             # Refresh token may have expired. Try using our password.
             print('Retry with username and password')
@@ -220,13 +234,13 @@ def get_sts_token(current_refresh_token, url=None):
         return None, None, None
     elif r.status_code == 403 or r.status_code == 451:
         # Stop retrying with the request
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         print('Stop retrying with the request')
         return None, None, None
     else:
-        # Retry the request to the API gateway
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
-        print('Retry the request to the API gateway')
+        # Retry the request to Refinitiv Data Platform 
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
+        print('Retry the request to the Refinitiv Data Platform')
         return get_sts_token(current_refresh_token)
 
 def check_new_password(pwd):

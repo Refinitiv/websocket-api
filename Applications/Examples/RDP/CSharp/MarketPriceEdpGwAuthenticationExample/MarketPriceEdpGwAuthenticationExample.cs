@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 using System;
@@ -15,6 +15,26 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
+/*
+ * This example demonstrates authenticating via Refinitiv Data Platform, using an
+ * authentication token and a Refinitiv Real-Time service endpoint to retrieve 
+ * market content.
+ *
+ * This example maintains a session by proactively renewing the authentication
+ * token before expiration.
+ *
+ * It performs the following steps:
+ * - Authenticating via HTTP Post request to Refinitiv Data Platform
+ * - Opening a WebSocket to a specified Refinitiv Real-Time Service endpoint (host/port)
+ * - Sending Login into the Real-Time Service using the token retrieved
+ *   from Refinitiv Data Platform.
+ * - Requesting market-price content.
+ * - Printing the response content.
+ * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+ *   providing the updated token to the Real-Time endpoint before token expiration.
+ */
+
 
 namespace MarketPriceEdpGwAuthenticationExample
 {
@@ -178,7 +198,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                         case HttpStatusCode.TemporaryRedirect: // 307
                         case (HttpStatusCode)308:              // 308 Permanent Redirect
                             // Perform URL redirect
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             string newHost = response.Headers.Get("Location");
                             if (!string.IsNullOrEmpty(newHost))
                                 ret = GetAuthenticationInfo(isRefresh, newHost);
@@ -186,7 +206,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                         case HttpStatusCode.BadRequest:        // 400
                         case HttpStatusCode.Unauthorized:      // 401
                             // Retry with username and password
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             if (isRefresh)
                             {
                                 Console.WriteLine("Retry with username and password");
@@ -198,14 +218,14 @@ namespace MarketPriceEdpGwAuthenticationExample
                         case HttpStatusCode.Forbidden:         // 403
                         case (HttpStatusCode)451:              // 451 Unavailable For Legal Reasons
                             // Stop retrying with the request
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
                             Console.WriteLine("Stop retrying with the request");
                             ret = false;
                             break;
                         default:
-                            // Retry the request to the API gateway
-                            Console.WriteLine("EDP-GW authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
-                            Console.WriteLine("Retry the request to the API gateway");
+                            // Retry the request to the Refinitiv Data Platform 
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Retry the request to the Refinitiv Data Platform");
                             ret = GetAuthenticationInfo(isRefresh);
                             break;
                     }
@@ -551,7 +571,7 @@ namespace MarketPriceEdpGwAuthenticationExample
                     Console.WriteLine("Password must contain characters belonging to at least "
                         + Policy.passwordMinNumberOfCategories 
                         + " of the following four categories:\n"
-                        + "uppercase letters, lovercase letters, digits, and special characters.\n");
+                        + "uppercase letters, lowercase letters, digits, and special characters.\n");
                     Environment.Exit(1);
                 }
 

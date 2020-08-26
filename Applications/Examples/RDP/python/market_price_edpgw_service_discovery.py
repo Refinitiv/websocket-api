@@ -3,13 +3,34 @@
 # |            This source code is provided under the Apache 2.0 license      --
 # |  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 # |                See the project's LICENSE.md for details.                  --
-# |            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+# |            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 # |-----------------------------------------------------------------------------
+
 """
-Simple example of authenticating to EDP-GW and using the token to query VIPs
-from EDP service discovery, login to the Elektron Real-Time Service, and
-retrieve MarketPrice content. A username and password are used to
-retrieve this token.
+  This example demonstrates authenticating via Refinitiv Data Platform, using an
+  authentication token to discover Refinitiv Real-Time service endpoint, and
+  using the endpoint and authentitcation to retrieve market content.
+ 
+  This example maintains a session by proactively renewing the authentication
+  token before expiration.
+ 
+  This example can run with optional hotstandby support. Without this support, the application
+  will use a load-balanced interface with two hosts behind the load balancer. With hot standly
+  support, the application will access two hosts and display the data (should be identical) from
+  each of the hosts.
+ 
+  It performs the following steps:
+  - Authenticating via HTTP Post request to Refinitiv Data Platform
+  - Retrieving service endpoints from Service Discovery via HTTP Get request,
+    using the token retrieved from Refinitiv Data Platform
+  - Opening a WebSocket (or two, if the --hotstandby option is specified) to
+    a Refinitiv Real-Time Service endpoint, as retrieved from Service Discovery
+  - Sending Login into the Real-Time Service using the token retrieved
+    from Refinitiv Data Platform.
+  - Requesting market-price content.
+  - Printing the response content.
+  - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+    providing the updated token to the Real-Time endpoint before token expiration.
 """
 
 import sys
@@ -203,19 +224,19 @@ def query_service_discovery(url=None):
     if url is None:
         url = discovery_url
 
-    print("Sending EDP-GW service discovery request to " + url)
+    print("Sending Refinitiv Data Platform service discovery request to " + url)
 
     try:
         r = requests.get(url, headers={"Authorization": "Bearer " + sts_token}, params={"transport": "websocket"}, allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
-        print('EDP-GW service discovery exception failure:', e)
+        print('Refinitiv Data Platform service discovery exception failure:', e)
         return False
 
     if r.status_code == 200:
         # Authentication was successful. Deserialize the response.
         response_json = r.json()
-        print("EDP-GW Service discovery succeeded. RECEIVED:")
+        print("Refinitiv Data Platform Service discovery succeeded. RECEIVED:")
         print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         for index in range(len(response_json['services'])):
@@ -246,14 +267,14 @@ def query_service_discovery(url=None):
                 sys.exit(1)
         else:
             if len(hostList) == 0:
-                print("No host found from EDP service discovery")
+                print("No host found from Refinitiv Data Platform service discovery")
                 sys.exit(1)
 
         return True
 
     elif r.status_code == 301 or r.status_code == 302 or r.status_code == 303 or r.status_code == 307 or r.status_code == 308:
         # Perform URL redirect
-        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform service discovery HTTP code:', r.status_code, r.reason)
         new_host = r.headers['Location']
         if new_host is not None:
             print('Perform URL redirect to ', new_host)
@@ -261,12 +282,12 @@ def query_service_discovery(url=None):
         return False
     elif r.status_code == 403 or r.status_code == 451:
         # Stop trying with the request
-        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform service discovery HTTP code:', r.status_code, r.reason)
         print('Stop trying with the request')
         return False
     else:
         # Retry the service discovery request
-        print('EDP-GW service discovery HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform service discovery HTTP code:', r.status_code, r.reason)
         print('Retry the service discovery request')
         return query_service_discovery()
 
@@ -301,18 +322,18 @@ def get_sts_token(current_refresh_token, url=None):
                           allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
-        print('EDP-GW authentication exception failure:', e)
+        print('Refinitiv Data Platform authentication exception failure:', e)
         return None, None, None
 
     if r.status_code == 200:
         auth_json = r.json()
-        print("EDP-GW Authentication succeeded. RECEIVED:")
+        print("Refinitiv Data Platform Authentication succeeded. RECEIVED:")
         print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         return auth_json['access_token'], auth_json['refresh_token'], auth_json['expires_in']
     elif r.status_code == 301 or r.status_code == 302 or r.status_code == 307 or r.status_code == 308:
         # Perform URL redirect
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         new_host = r.headers['Location']
         if new_host is not None:
             print('Perform URL redirect to ', new_host)
@@ -320,7 +341,7 @@ def get_sts_token(current_refresh_token, url=None):
         return None, None, None
     elif r.status_code == 400 or r.status_code == 401:
         # Retry with username and password
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         if current_refresh_token:
             # Refresh token may have expired. Try using our password.
             print('Retry with username and password')
@@ -328,13 +349,13 @@ def get_sts_token(current_refresh_token, url=None):
         return None, None, None
     elif r.status_code == 403 or r.status_code == 451:
         # Stop retrying with the request
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
         print('Stop retrying with the request')
         return None, None, None
     else:
-        # Retry the request to the API gateway
-        print('EDP-GW authentication HTTP code:', r.status_code, r.reason)
-        print('Retry the request to the API gateway')
+        # Retry the request to Refinitiv Data Platform 
+        print('Refinitiv Data Platform authentication HTTP code:', r.status_code, r.reason)
+        print('Retry the request to Refinitiv Data Platform')
         return get_sts_token(current_refresh_token)
 
 
@@ -522,9 +543,9 @@ if __name__ == "__main__":
 
     original_expire_time = expire_time
 
-    # Query VIPs from EDP service discovery
+    # Query VIPs from Refinitiv Data Platform service discovery
     if not query_service_discovery():
-        print("Failed to retrieve endpoints from EDP Service Discovery. Exiting...")
+        print("Failed to retrieve endpoints from Refinitiv Data Platform Service Discovery. Exiting...")
         sys.exit(1)
 
     # Start websocket handshake; create two sessions when the hotstandby parameter is specified.

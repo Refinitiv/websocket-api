@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 
@@ -37,14 +37,23 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 
-/**
- * This example demonstrates authenticating via the Elektron Real-Time Service and Elektron Data Platform Gateway, and logging in with the retrieved token to retrieve market content.
- * It does so by:
- * - Authenticating via HTTP Post request to the Gateway
- * - Opening a WebSocket to the Elektron Real-Time Service
- * - Logging into the Real-Time Service using the token retrieved from the Gateway
- * - Requesting market content
- * - Perodically re-authenticating to the Gateway, and providing the updated token to the Real-Time Service.
+/*
+ * This example demonstrates authenticating via Refinitiv Data Platform, using an
+ * authentication token and a Refinitiv Real-Time service endpoint to retrieve
+ * market content.
+ *
+ * This example maintains a session by proactively renewing the authentication
+ * token before expiration.
+ *
+ * It performs the following steps:
+ * - Authenticating via HTTP Post request to Refinitiv Data Platform
+ * - Opening a WebSocket to a specified Refinitiv Real-Time Service endpoint (host/port)
+ * - Sending Login into the Real-Time Service using the token retrieved
+ *   from Refinitiv Data Platform.
+ * - Requesting market-price content.
+ * - Printing the response content.
+ * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+ *   providing the updated token to the Real-Time endpoint before token expiration.
  */
 public class MarketPriceEdpGwAuthentication {
 
@@ -180,7 +189,7 @@ public class MarketPriceEdpGwAuthentication {
         	}
         	if (countCategories < passwordMinNumberOfCategories) {
         		System.out.println("Password must contain characters belonging to at least three of the following four categories:\n"
-	    				+ "uppercase letters, lovercase letters, digits, and special characters.\n");
+	    				+ "uppercase letters, lowercase letters, digits, and special characters.\n");
         		System.exit(0);
         	}
          	if (!changePassword(authUrl)) {
@@ -192,7 +201,7 @@ public class MarketPriceEdpGwAuthentication {
 
         try {
 
-            // Connect to the gateway and authenticate (using our username and password)
+            // Connect to Refinitiv Data Platform and authenticate (using our username and password)
             authJson = getAuthenticationInfo(null);
             if (authJson == null)
                 System.exit(1);
@@ -208,7 +217,7 @@ public class MarketPriceEdpGwAuthentication {
                 // Continue using current token until 90% of initial time before it expires.
                 Thread.sleep(expireTime * 900);  // The value 900 means 90% of expireTime in milliseconds
 
-                // Connect to the gateway and re-authenticate, using the refresh token provided in the previous response
+                // Connect to Refinitiv Data Platform and re-authenticate, using the refresh token provided in the previous response
                 authJson = getAuthenticationInfo(authJson);
                 if (authJson == null)
                     System.exit(1);
@@ -410,7 +419,7 @@ public class MarketPriceEdpGwAuthentication {
     }
 
     /**
-     * Authenticate to the gateway via an HTTP post request.
+     * Authenticate to Refinitiv Data Platform via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
      * the refresh token from that response. Uses authUrl as url.
      * @param previousAuthResponseJson Information from a previous authentication, if available
@@ -422,7 +431,7 @@ public class MarketPriceEdpGwAuthentication {
     }
 
     /**
-     * Authenticate to the gateway via an HTTP post request.
+     * Authenticate to Refinitiv Data Platform via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
      * the refresh token from that response.
      * @param previousAuthResponseJson Information from a previous authentication, if available
@@ -476,7 +485,7 @@ public class MarketPriceEdpGwAuthentication {
             case HttpStatus.SC_OK:                  // 200
                 // Authentication was successful. Deserialize the response and return it.
                 JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-                System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
+                System.out.println("Refinitiv Data Platform Authentication succeeded. RECEIVED:");
                 System.out.println(responseJson.toString(2));
                 return responseJson;
             case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
@@ -484,7 +493,7 @@ public class MarketPriceEdpGwAuthentication {
             case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
             case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
                 // Perform URL redirect
-                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 Header header = response.getFirstHeader("Location");
                 if( header != null )
                 {
@@ -499,7 +508,7 @@ public class MarketPriceEdpGwAuthentication {
             case HttpStatus.SC_BAD_REQUEST:                    // 400
             case HttpStatus.SC_UNAUTHORIZED:                   // 401
                 // Retry with username and password
-                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 if (previousAuthResponseJson != null)
                 {
                     System.out.println("Retry with username and password");
@@ -509,17 +518,17 @@ public class MarketPriceEdpGwAuthentication {
             case HttpStatus.SC_FORBIDDEN:                      // 403
             case 451:                                          // 451 Unavailable For Legal Reasons
                 // Stop retrying with the request
-                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 System.out.println("Stop retrying with the request");
                 return null;
             default:
-                // Retry the request to the API gateway
-                System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-                System.out.println("Retry the request to the API gateway");
+                // Retry the request to Refinitiv Data Platform
+                System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Retry the request to Refinitiv Data Platform");
                 return getAuthenticationInfo(previousAuthResponseJson);
             }
         } catch (Exception e) {
-            System.out.println("EDP-GW authentication failure:");
+            System.out.println("Refinitiv Data Platform authentication failure:");
             e.printStackTrace();
             return null;
         }

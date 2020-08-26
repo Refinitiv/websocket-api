@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2019-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 
@@ -39,17 +39,33 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 
-/**
- * This example demonstrates authenticating via the Elektron Real-Time Service and Elektron Data Platform Gateway, using the token to query VIPs
- * from EDP service discovery, and logging in with the retrieved token to retrieve market content.
- * It does so by:
- * - Authenticating via HTTP Post request to the Gateway
- * - Retrieving service endpoints from Service Discovery via HTTP Get request, using the token retrieved from the Gateway
- * - Opening a WebSocket (or two, if the --hotstandby option is specified) to an Elektron Real-Time Service endpoint, as retrieved from Service Discovery
- * - Logging into the Real-Time Service using the token retrieved from the Gateway
- * - Requesting market content
- * - Periodically re-authenticating to the Gateway, and providing the updated token to the Real-Time Service.
+/*
+ * This example demonstrates authenticating via Refinitiv Data Platform, using an
+ * authentication token to discover Refinitiv Real-Time service endpoint, and
+ * using the endpoint and authentitcation to retrieve market content.
+ *
+ * This example maintains a session by proactively renewing the authentication
+ * token before expiration.
+ *
+ * This example can run with optional hotstandby support. Without this support, the application
+ * will use a load-balanced interface with two hosts behind the load balancer. With hot standly
+ * support, the application will access two hosts and display the data (should be identical) from
+ * each of the hosts.
+ *
+ * It performs the following steps:
+ * - Authenticating via HTTP Post request to Refinitiv Data Platform
+ * - Retrieving service endpoints from Service Discovery via HTTP Get request,
+ *   using the token retrieved from Refinitiv Data Platform
+ * - Opening a WebSocket (or two, if the --hotstandby option is specified) to
+ *   a Refinitiv Real-Time Service endpoint, as retrieved from Service Discovery
+ * - Sending Login into the Real-Time Service using the token retrieved
+ *   from Refinitiv Data Platform.
+ * - Requesting market-price content.
+ * - Printing the response content.
+ * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
+ *   providing the updated token to the Real-Time endpoint before token expiration.
  */
+
 public class MarketPriceEdpGwServiceDiscovery {
 
     public static String port = "443";
@@ -431,7 +447,7 @@ public class MarketPriceEdpGwServiceDiscovery {
         	}
         	if (countCategories < passwordMinNumberOfCategories) {
         		System.out.println("Password must contain characters belonging to at least three of the following four categories:\n"
-	    				+ "uppercase letters, lovercase letters, digits, and special characters.\n");
+	    				+ "uppercase letters, lowercase letters, digits, and special characters.\n");
         		System.exit(0);
         	}
          	if (!changePassword(authUrl)) {
@@ -443,7 +459,7 @@ public class MarketPriceEdpGwServiceDiscovery {
 
         try {
 
-            // Connect to the gateway and authenticate (using our username and password)
+            // Connect to Refinitiv Data Platform and authenticate (using our username and password)
             authJson = getAuthenticationInfo(null);
             if (authJson == null)
                 System.exit(1);
@@ -521,7 +537,7 @@ public class MarketPriceEdpGwServiceDiscovery {
                 // Continue using current token until 90% of initial time before it expires.
                 Thread.sleep(expireTime * 900);  // The value 900 means 90% of expireTime in milliseconds
 
-                // Connect to the gateway and re-authenticate, using the refresh token provided in the previous response
+                // Connect to Refinitiv Data Platform and re-authenticate, using the refresh token provided in the previous response
                 authJson = getAuthenticationInfo(authJson);
                 if (authJson == null)
                     System.exit(1);
@@ -682,7 +698,7 @@ public class MarketPriceEdpGwServiceDiscovery {
     
     
     /**
-     * Authenticate to the gateway via an HTTP post request.
+     * Authenticate to Refinitiv Data Platform via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
      * the refresh token from that response. Uses authUrl as url.
      * @param previousAuthResponseJson Information from a previous authentication, if available
@@ -694,7 +710,7 @@ public class MarketPriceEdpGwServiceDiscovery {
     }
 
     /**
-     * Authenticate to the gateway via an HTTP post request.
+     * Authenticate to Refinitiv Data Platform via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
      * the refresh token from that response.
      * @param previousAuthResponseJson Information from a previous authentication, if available
@@ -748,7 +764,7 @@ public class MarketPriceEdpGwServiceDiscovery {
              case HttpStatus.SC_OK:                  // 200
                  // Authentication was successful. Deserialize the response and return it.
                  JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-                 System.out.println("EDP-GW Authentication succeeded. RECEIVED:");
+                 System.out.println("Refinitiv Data Platform Authentication succeeded. RECEIVED:");
                  System.out.println(responseJson.toString(2));
                  return responseJson;
              case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
@@ -756,7 +772,7 @@ public class MarketPriceEdpGwServiceDiscovery {
              case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
              case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
                  // Perform URL redirect
-                 System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  Header header = response.getFirstHeader("Location");
                  if( header != null )
                  {
@@ -771,7 +787,7 @@ public class MarketPriceEdpGwServiceDiscovery {
              case HttpStatus.SC_BAD_REQUEST:                    // 400
              case HttpStatus.SC_UNAUTHORIZED:                   // 401
                  // Retry with username and password
-                 System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  if (previousAuthResponseJson != null)
                  {
                      System.out.println("Retry with username and password");
@@ -781,17 +797,17 @@ public class MarketPriceEdpGwServiceDiscovery {
              case HttpStatus.SC_FORBIDDEN:                      // 403
              case 451:                                          // 451 Unavailable For Legal Reasons
                  // Stop retrying with the request
-                 System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  System.out.println("Stop retrying with the request");
                  return null;
              default:
-                 // Retry the request to the API gateway
-                 System.out.println("EDP-GW authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-                 System.out.println("Retry the request to the API gateway");
+                 // Retry the request to Refinitiv Data Platform 
+                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 System.out.println("Retry the request to Refinitiv Data Platform");
                  return getAuthenticationInfo(previousAuthResponseJson);
              }
          } catch (Exception e) {
-             System.out.println("EDP-GW authentication failure:");
+             System.out.println("Refinitiv Data Platform authentication failure:");
              e.printStackTrace();
              return null;
          }
@@ -828,7 +844,7 @@ public class MarketPriceEdpGwServiceDiscovery {
             httpget.setParams(httpParams);
             httpget.setHeader("Authorization", "Bearer " + authJson.getString("access_token"));
 
-            System.out.println("Sending EDP-GW service discovery request to " + url + "...");
+            System.out.println("Sending service discovery request to " + url + "...");
 
             //Execute and get the response.
             HttpResponse response = httpclient.execute(httpget);
@@ -840,7 +856,7 @@ public class MarketPriceEdpGwServiceDiscovery {
             case HttpStatus.SC_OK:                             // 200
                 // Service discovery was successful. Deserialize the response and return it.
                 JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-                System.out.println("EDP-GW service discovery succeeded. RECEIVED:");
+                System.out.println("Refinitiv Data Platform service discovery succeeded. RECEIVED:");
                 System.out.println(responseJson.toString(2));
                 return responseJson;
             case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
@@ -849,7 +865,7 @@ public class MarketPriceEdpGwServiceDiscovery {
             case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
             case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
                 // Perform URL redirect
-                System.out.println("EDP-GW service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 Header header = response.getFirstHeader("Location");
                 if( header != null )
                 {
@@ -864,17 +880,17 @@ public class MarketPriceEdpGwServiceDiscovery {
             case HttpStatus.SC_FORBIDDEN:                      // 403
             case 451:                                          // 451 Unavailable For Legal Reasons
                 // Stop retrying with the request
-                System.out.println("EDP-GW service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println(" Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 System.out.println("Stop retrying with the request");
                 return null;
             default:
                 // Retry the service discovery request
-                System.out.println("EDP-GW service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println("Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 System.out.println("Retry the service discovery request");
                 return queryServiceDiscovery();
             }
         } catch (Exception e) {
-            System.out.println("EDP-GW service discovery failure:");
+            System.out.println("Refinitiv Data Platform service discovery failure:");
             e.printStackTrace();
             return null;
         }
