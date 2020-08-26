@@ -25,6 +25,7 @@ app_id = '256'
 auth_url = 'https://api.refinitiv.com:443/auth/oauth2/v1/token'
 hostname = ''
 password = ''
+newPassword = ''
 position = ''
 sts_token = ''
 refresh_token = ''
@@ -42,6 +43,21 @@ web_socket_open = False
 logged_in = False
 original_expire_time = '0'; 
 
+# Global Variables for Password Policy Description
+PASSWORD_LENGTH_MASK                = 0x1;
+PASSWORD_UPPERCASE_LETTER_MASK      = 0x2;
+PASSWORD_LOWERCASE_LETTER_MASK      = 0x4;
+PASSWORD_DIGIT_MASK                 = 0x8;
+PASSWORD_SPECIAL_CHARACTER_MASK     = 0x10;
+PASSWORD_INVALID_CHARACTER_MASK     = 0x20;
+
+PASSWORD_LENGTH_MIN                 = 30;
+PASSWORD_UPPERCASE_LETTER_MIN       = 1;
+PASSWORD_LOWERCASE_LETTER_MIN       = 1;
+PASSWORD_DIGIT_MIN                  = 1;
+PASSWORD_SPECIAL_CHARACTER_MIN      = 1;
+PASSWORD_SPECIAL_CHARACTER_SET      = "~!@#$%^&*()-_=+[]{}|;:,.<>/?";
+PASSWORD_MIN_NUMBER_OF_CATEGORIES   = 3;
 
 def process_message(message_json):
     """ Parse at high level and output JSON of message """
@@ -158,36 +174,23 @@ def get_sts_token(current_refresh_token, url=None):
         url = auth_url
 
     if not current_refresh_token:  # First time through, send password
-        if url.startswith('https'):
-            data = {'username': user, 'password': password, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
-                    'scope': scope}
-        else:
-            data = {'username': user, 'password': password, 'client_id': clientid, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
+        data = {'username': user, 'password': password, 'client_id': clientid, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
                     'scope': scope}
         print("Sending authentication request with password to", url, "...")
     else:  # Use the given refresh token
-        if url.startswith('https'):
-            data = {'username': user, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
-        else:
-            data = {'username': user, 'client_id': clientid, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
+        data = {'username': user, 'client_id': clientid, 'refresh_token': current_refresh_token, 'grant_type': 'refresh_token'}
         print("Sending authentication request with refresh token to", url, "...")
+    if client_secret != '':
+        data['client_secret'] = client_secret;
 
     try:
-        if url.startswith('https'):
-            # Request with auth for https protocol
-            r = requests.post(url,
-                              headers={'Accept': 'application/json'},
-                              data=data,
-                              auth=(clientid, client_secret),
-                              verify=True,
-                              allow_redirects=False)
-        else:
-            # Request without auth for non https protocol (e.g. http)
-            r = requests.post(url,
-                              headers={'Accept': 'application/json'},
-                              data=data,
-                              verify=True,
-                              allow_redirects=False)
+        # Request with auth for https protocol
+        r = requests.post(url,
+                      headers={'Accept': 'application/json'},
+                      data=data,
+                      auth=(clientid, client_secret),
+                      verify=True,
+                      allow_redirects=False)
 
     except requests.exceptions.RequestException as e:
         print('EDP-GW authentication exception failure:', e)
@@ -226,20 +229,107 @@ def get_sts_token(current_refresh_token, url=None):
         print('Retry the request to the API gateway')
         return get_sts_token(current_refresh_token)
 
+def check_new_password(pwd):
+    result = 0;
+
+    countUpper = 0;
+    countLower = 0;
+    countDigit = 0;
+    countSpecial = 0;
+
+    if len(pwd) < PASSWORD_LENGTH_MIN :
+        result |= PASSWORD_LENGTH_MASK;
+    
+    for c in pwd :
+        # This long condition is used in order not to import re library
+        # If re will be imported for some other purpose this condition should be
+        # refactored using regular expression
+        if not ((c >= 'A' and c <= 'Z') or (c >= 'a' and c <= 'z') \
+              or (c >= '0' and c <= '9') or (c in  PASSWORD_SPECIAL_CHARACTER_SET)) :
+            result |= PASSWORD_INVALID_CHARACTER_MASK;
+        
+        if (c >= 'A' and c <= 'Z') :
+           countUpper += 1;
+        if (c >= 'a' and c <= 'z') :
+           countLower += 1;
+        if (c >= '0' and c <= '9') :
+            countDigit += 1;
+        if (c in  PASSWORD_SPECIAL_CHARACTER_SET) :
+            countSpecial += 1;
+
+    if (countUpper < PASSWORD_UPPERCASE_LETTER_MIN) :        
+        result |= PASSWORD_UPPERCASE_LETTER_MASK;
+    if (countLower < PASSWORD_LOWERCASE_LETTER_MIN) : 
+        result |= PASSWORD_LOWERCASE_LETTER_MASK;
+    if (countDigit < PASSWORD_DIGIT_MIN) :
+        result |= PASSWORD_DIGIT_MASK;       
+    if (countSpecial < PASSWORD_SPECIAL_CHARACTER_MIN) :        
+        result |= PASSWORD_SPECIAL_CHARACTER_MASK;
+           
+    return result
+ 
+ 
+def changePassword():
+
+    data = {'username': user, 'password': password, 'client_id': clientid, 'grant_type': 'password', 'takeExclusiveSignOnControl': True,
+                    'scope': scope, 'newPassword' : newPassword}
+    print("Sending changing password request to", auth_url, "...")
+
+    try:
+        # Request with auth for https protocol
+        r = requests.post(auth_url,
+                          headers={'Accept': 'application/json'},
+                          data=data,
+                          auth=(clientid, client_secret),
+                          verify=True,
+                          allow_redirects=False)
+
+    except requests.exceptions.RequestException as e:
+        print('Changing password exception failure:', e)
+        return False
+
+    if r.status_code == 200:
+        auth_json = r.json()
+        print("Password successfully changed.")
+        print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
+        return True
+    elif r.status_code == 301 or r.status_code == 302 or r.status_code == 307 or r.status_code == 308:
+        # Perform URL redirect
+        print('Changing password response HTTP code:', r.status_code, r.reason)
+        new_host = r.headers['Location']
+        if new_host is not None:
+            print('Perform URL redirect to ', new_host)
+            return changePassword()
+        return False
+    elif r.status_code >= 400 :
+        # Error during change password attempt
+        auth_json = r.json()
+        print('Changing password response HTTP code:', r.status_code, r.reason)
+        print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
+        return False
+    else:
+        # Retry the request to the API gateway
+        print('Changing password response HTTP code:', r.status_code, r.reason)
+        print('Retry change request')
+        return changePassword()
+    
+    
+    
+
 if __name__ == "__main__":
     # Get command line parameters
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "clientid=", "password=",
-                                                      "position=", "auth_url=", "scope=", "ric=", "service="])
+                                                      "newPassword=", "position=", "auth_url=", "scope=", "ric=", "service="])
     except getopt.GetoptError:
         print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
-              '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
+              '[--user user] [--clientid clientid] [--password password] [--newPassword new_password] [--position position] [--auth_url auth_url] '
               '[--scope scope] [--ric ric] [--service service] [--help]')
         sys.exit(2)
     for opt, arg in opts:
         if opt in "--help":
             print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
-                  '[--user user] [--clientid clientid] [--password password] [--position position] [--auth_url auth_url] '
+                  '[--user user] [--clientid clientid] [--password password] [--newPassword new_password] [--position position] [--auth_url auth_url] '
                   '[--scope scope] [--ric ric] [--service service] [--help]')
             sys.exit(0)
         elif opt in "--hostname":
@@ -254,6 +344,8 @@ if __name__ == "__main__":
             clientid = arg
         elif opt in "--password":
             password = arg
+        elif opt in "--newPassword":
+            newPassword = arg
         elif opt in "--position":
             position = arg
         elif opt in "--auth_url":
@@ -268,7 +360,40 @@ if __name__ == "__main__":
     if user == '' or password == '' or  hostname == '' or clientid == '':
         print("user, clientid, password, and hostname are required options")
         sys.exit(2)
-
+       
+    if (newPassword != '') :
+        policyResult = check_new_password(newPassword);
+    
+        if (policyResult & PASSWORD_INVALID_CHARACTER_MASK != 0) :
+            print("New password contains invalid symbol");
+            print("valid symbols are [A-Z][a-z][0-9]", PASSWORD_SPECIAL_CHARACTER_SET, sep = '');       
+            sys.exit(2);
+        
+        if (policyResult & PASSWORD_LENGTH_MASK != 0) :
+            print("New password length should be at least ", PASSWORD_LENGTH_MIN, " characters"); 
+            sys.exit(2);
+        
+        countCategories = 0;
+        if (policyResult & PASSWORD_UPPERCASE_LETTER_MASK == 0) :
+            countCategories += 1;
+        if (policyResult & PASSWORD_LOWERCASE_LETTER_MASK == 0) :
+            countCategories += 1;
+        if (policyResult & PASSWORD_DIGIT_MASK == 0) :
+            countCategories += 1;
+        if (policyResult & PASSWORD_SPECIAL_CHARACTER_MASK == 0) :
+            countCategories += 1;        
+    
+        if (countCategories < PASSWORD_MIN_NUMBER_OF_CATEGORIES) :    
+            print ("Password must contain characters belonging to at least three of the following four categories:\n"
+		    	 "uppercase letters, lowercase letters, digits, and special characters.\n");
+            sys.exit(2);     
+    
+        if (not changePassword()):
+            sys.exit(2); 
+            
+        password = newPassword;
+        newPassword = '';
+    
     if position == '':
         # Populate position if possible
         try:

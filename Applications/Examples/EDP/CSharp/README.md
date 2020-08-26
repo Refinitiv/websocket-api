@@ -47,6 +47,7 @@ Option            |Description|
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--newPassword`   | OPTIONAL. New password provided by user to change. Current password policy may be found at https://confluence.refinitiv.com/display/AAAH/Machine+ID+Sessions+and+Passwords+Policies.
 
 ## Source File Description
 * `MarketPriceEdpGwAuthenticationExample.cs` - Source file for the MarketPriceEdpGwAuthentication example.
@@ -71,6 +72,7 @@ Option            |Description|
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--newPassword`   | OPTIONAL. New password provided by user to change. Current password policy may be found at https://confluence.refinitiv.com/display/AAAH/Machine+ID+Sessions+and+Passwords+Policies.
 
 ## Source File Description
 * `MarketPriceEdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceEdpGwServiceDiscovery example.

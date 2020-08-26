@@ -58,6 +58,7 @@ public class MarketPriceEdpGwServiceDiscovery {
     public static String position = "";
     public static String appId = "256";
     public static String password = "";
+    public static String newPassword = "";
     public static String authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
     public static String discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
     public static String ric = "/TRI.N";
@@ -71,6 +72,23 @@ public class MarketPriceEdpGwServiceDiscovery {
     public static WebSocketSession webSocketSession2 = null;
     public static boolean hotstandby = false;
     public static String region = "amer";
+    
+    final private static int passwordLengthMask               = 0x1;
+    final private static int passwordUppercaseLetterMask      = 0x2;
+    final private static int passwordLowercaseLetterMask      = 0x4;
+    final private static int passwordDigitMask                = 0x8;
+    final private static int passwordSpecialCharacterMask     = 0x10;
+    final private static int passwordInvalidCharacterMask     = 0x20;
+
+
+    // Default password policy
+    final private static int passwordLengthMin                = 30;
+    final private static int passwordUppercaseLetterMin       = 1;
+    final private static int passwordLowercaseLetterMin       = 1;
+    final private static int passwordDigitMin                 = 1;
+    final private static int passwordSpecialCharacterMin      = 1;
+    final private static String passwordSpecialCharacterSet   = "~!@#$%^&*()-_=+[]{}|;:,.<>/?";
+    final private static int passwordMinNumberOfCategories    = 3;
 
     /**
      * Class representing a session over a WebSocket.
@@ -313,6 +331,7 @@ public class MarketPriceEdpGwServiceDiscovery {
         options.addOption(Option.builder().longOpt("clientid").required().hasArg().desc("clientid").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
         options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
+        options.addOption(Option.builder().longOpt("newPassword").hasArg().desc("newPassword").build());
         options.addOption(Option.builder().longOpt("auth_url").hasArg().desc("auth_url").build());
         options.addOption(Option.builder().longOpt("discovery_url").hasArg().desc("discovery_url").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());
@@ -383,6 +402,43 @@ public class MarketPriceEdpGwServiceDiscovery {
                 System.out.println("Unknown region \"" + region + "\". The region must be either \"amer\", \"emea\", or \"apac\".");
                 System.exit(1);
             }
+        }
+        if(cmd.hasOption("newPassword")) {
+        	newPassword = cmd.getOptionValue("newPassword");
+        	if ((newPassword == null) || (newPassword.length() == 0)) {
+        		System.out.println("Value of the option newPassword cannot be empty");
+        		System.exit(1);
+        	}
+        	
+        	int result = checkPassword(newPassword);
+        	if ((result & passwordInvalidCharacterMask) != 0) {
+        		System.out.println("New password contains invalid symbol(s)");
+        		System.out.println("Valid symbols are [A-Z][a-z][0-9]" + passwordSpecialCharacterSet);
+        		System.exit(0);
+        	}
+        	
+        	if ((result & passwordLengthMask) != 0) {
+        		System.out.println("New password length should be at least " 
+        	            + passwordLengthMin
+        	            + " characters");
+        		System.exit(0);
+        	}
+        	int countCategories = 0;
+        	for (int mask = passwordUppercaseLetterMask; mask <= passwordSpecialCharacterMask; mask <<= 1) {
+        		if ((result & mask) == 0) {
+        			countCategories++;
+        		}
+        	}
+        	if (countCategories < passwordMinNumberOfCategories) {
+        		System.out.println("Password must contain characters belonging to at least three of the following four categories:\n"
+	    				+ "uppercase letters, lovercase letters, digits, and special characters.\n");
+        		System.exit(0);
+        	}
+         	if (!changePassword(authUrl)) {
+         		System.exit(0);
+         	}
+         	password = newPassword;
+         	newPassword = "";
         }
 
         try {
@@ -494,6 +550,137 @@ public class MarketPriceEdpGwServiceDiscovery {
         }
     }
 
+    public static int checkPassword(String pwd) {
+    	int result = 0;
+    	
+    	if (pwd.length() < passwordLengthMin) {
+    		result |= passwordLengthMask;
+    	} 
+    	
+    	int countUpper = 0;
+    	int countLower = 0;
+        int countDigit = 0;
+        int countSpecial = 0;
+        
+        for (int i = 0; i < pwd.length(); i++) {
+        	char c = pwd.charAt(i);
+        	StringBuffer currentSymbol = new StringBuffer(1);
+        	currentSymbol.append(c);
+
+        	String charAsString = new String(currentSymbol);
+        	if ((!charAsString.matches("[A-Za-z0-9]")) && (!passwordSpecialCharacterSet.contains(currentSymbol))) {
+        		result |= passwordInvalidCharacterMask;
+        	}
+        	
+        	if (Character.isUpperCase(c)) {
+        		countUpper++;
+        	}
+        	if (Character.isLowerCase(c)) {
+        		countLower++;
+        	}
+        	if (Character.isDigit(c)) {
+        		countDigit++;
+        	}        	
+        	if (passwordSpecialCharacterSet.contains(currentSymbol))  {
+        		countSpecial++;
+        	}
+        }
+        
+        if (countUpper < passwordUppercaseLetterMin) {
+        	result |= passwordUppercaseLetterMask;
+        }
+        if (countLower < passwordLowercaseLetterMin) {
+        	result |= passwordLowercaseLetterMask;
+        }
+        if (countDigit < passwordDigitMin) {
+        	result |= passwordDigitMask;
+        }
+        if (countSpecial < passwordSpecialCharacterMin) {
+        	result |= passwordSpecialCharacterMask;
+        }
+        
+    	return result;
+    }
+    
+    /**
+     * Send a request to change password and receive an answer.
+     */   
+    public static boolean changePassword(String authServer) {
+    	boolean result = false;
+        try
+        {
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
+
+            HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            HttpPost httppost = new HttpPost(authServer);
+            HttpParams httpParams = new BasicHttpParams();
+
+            // Disable redirect
+            httpParams.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
+
+            // Set request parameters.
+            List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+            params.add(new BasicNameValuePair("client_id", clientid));
+            params.add(new BasicNameValuePair("username", user));
+            params.add(new BasicNameValuePair("grant_type", "password"));
+            params.add(new BasicNameValuePair("password", password));
+            params.add(new BasicNameValuePair("newPassword", newPassword));
+            params.add(new BasicNameValuePair("scope", scope));
+            params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
+            System.out.println("Sending password change request to " + authUrl);
+
+            httppost.setParams(httpParams);
+            httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+
+            //Execute and get the response.
+            HttpResponse response = httpclient.execute(httppost);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
+            switch ( statusCode ) {
+            case HttpStatus.SC_OK:                  // 200
+                // Password change was successful.
+                System.out.println("Password was successfully changed:");
+                result = true;
+                break;
+
+            case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
+            case HttpStatus.SC_MOVED_TEMPORARILY:              // 302
+            case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
+            case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
+                // Perform URL redirect
+                System.out.println("Password change HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                Header header = response.getFirstHeader("Location");
+                if( header != null )
+                {
+                    String newHost = header.getValue();
+                    if ( newHost != null )
+                    {
+                        System.out.println("Perform URL redirect to " + newHost);
+                        result = changePassword(newHost);
+                    } else {
+                    	result = false;
+                    }
+                }
+                break;
+            default:
+                // Error 4XX or 5XX
+                System.out.println("Password change failure\n" 
+                		+ response.getStatusLine().getStatusCode() + " " 
+                		+ response.getStatusLine().getReasonPhrase());
+                System.out.println(responseJson.toString(2));
+                result = false;
+            }
+        } catch (Exception e) {
+            System.out.println("Password change failure:");
+            e.printStackTrace();
+            result = false;
+        }
+        return result;
+    }
+    
+    
     /**
      * Authenticate to the gateway via an HTTP post request.
      * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using

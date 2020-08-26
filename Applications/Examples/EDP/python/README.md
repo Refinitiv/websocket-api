@@ -56,6 +56,7 @@ Option            |Description|
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--newPassword`   | OPTIONAL. New password provided by user to change. Current password policy may be found at https://confluence.refinitiv.com/display/AAAH/Machine+ID+Sessions+and+Passwords+Policies.
 
 ### Running the market\_price\_edpgw\_service\_discovery Example
 
@@ -79,6 +80,7 @@ Option            |Description|
 `--app_id`        | OPTIONAL. Application ID to use when logging in. If not specified, "256" is used.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+`--newPassword`   | OPTIONAL. New password provided by user to change. Current password policy may be found at https://confluence.refinitiv.com/display/AAAH/Machine+ID+Sessions+and+Passwords+Policies.
 
 ## Source File Description
 
