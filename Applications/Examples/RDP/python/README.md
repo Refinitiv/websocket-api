@@ -40,7 +40,7 @@ are not intended to be used for measuring performance.
 ### Running the market\_price\_edpgw\_authentication Example
 
 To run the example:
-- Run `python market_price_edpgw_authentication.py --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
+- Run `python3 market_price_edpgw_authentication.py --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
 - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -65,7 +65,7 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 ### Running the market\_price\_edpgw\_service\_discovery Example
 
 To run the example:
-- Run `python market_price_edpgw_service_discovery.py --user <username> --password <password> --clientid <client ID>`
+- Run `python3 market_price_edpgw_service_discovery.py --user <username> --password <password> --clientid <client ID>`
 - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
