@@ -23,7 +23,7 @@ These applications are intended as basic usage examples. Some of the design choi
 were made to favor simplicity and readability over performance. These applications
 are not intended to be used for measuring performance.
 
-## Compiling Source 
+## Setup 
 ### Windows
 - Project files are included for Visual Studio 2017. To compile the examples, open the solution
 file and build it.

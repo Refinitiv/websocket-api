@@ -25,7 +25,7 @@ were made to favor simplicity and readability over performance. These applicatio
 are not intended to be used for measuring performance.
 
 
-## Installing and Compiling Source 
+## Setup 
 ### Windows
 1. __Install Ant/Ivy__
     - Install __Ant__
@@ -86,6 +86,10 @@ Option            |Description|
 `--service`       | OPTIONAL. The requested Real-Time service name or service ID. Defaults to ELEKTRON_DD.
 
 NOTE about newPassword: Acceptable passwords may be 15 characters long and have a mix of letters (upper/lower), numbers and special characters.
+
+#### Source File Description
+
+* `MarketPriceEdpGwAuthentication.java` - Source file for the MarketPriceEdpGwAuthentication example.
 
 ### Running the MarketPriceEdpGwServiceDiscovery Example
 

@@ -23,7 +23,7 @@ These applications are intended as basic usage examples. Some of the design choi
 were made to favor simplicity and readability over performance. These applications
 are not intended to be used for measuring performance.
 
-## Installation
+## Setup
 ### Windows/Linux/macOS
 1. __Install Python__
     - Go to: <https://www.python.org/downloads/>
@@ -61,6 +61,10 @@ Option            |Description|
 `--service`       | OPTIONAL. The requested Real-Time service name or service ID. Defaults to ELEKTRON_DD.
 
 NOTE about newPassword: Acceptable passwords may be 15 characters long and have a mix of letters (upper/lower), numbers and special characters.
+
+#### Source File Description
+
+* `market_price_edpgw_authentication.py` - Source file for the market\_price\_edpgw\_authentication example.
 
 ### Running the market\_price\_edpgw\_service\_discovery Example
 
