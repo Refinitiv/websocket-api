@@ -40,7 +40,7 @@ In the event you would like to contribute to this repository, it is required tha
 
 Please email a signed and scanned copy to `sdkagreement@refinitiv.com`.  If you require that a signed agreement has to be physically mailed to us, please email the request for a mailing address and we will get back to you on where you can send the signed documents.
 
-Documentation for the WebSocket API and a Question & Answer forum are available at the [WebSocket API Section of the Refinitiv Developer Community](https://developers.refinitiv.com/websocket-api). 
+Documentation for the WebSocket API and a Question & Answer forum are available at the [WebSocket API Section of the Refinitiv Developer Community](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api). 
 
 # Support SLA
-Issues raised via GitHub will be addressed in a best-effort manner. For broad questions regarding Websocket API, please refer to documentation and [Q&A forum on Developer Community](https://developers.refinitiv.com/elektron/websocket-api/qa) which is supported by an existing active community of API users.
+Issues raised via GitHub will be addressed in a best-effort manner. For broad questions regarding Websocket API, please refer to documentation and [Q&A forum on Developer Community](https://community.developers.refinitiv.com/index.html) which is supported by an existing active community of API users.
