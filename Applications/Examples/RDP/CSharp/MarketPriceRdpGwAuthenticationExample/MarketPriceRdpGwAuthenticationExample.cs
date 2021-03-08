@@ -36,7 +36,7 @@ using Newtonsoft.Json.Linq;
  */
 
 
-namespace MarketPriceEdpGwAuthenticationExample
+namespace MarketPriceRdpGwAuthenticationExample
 {
     static class Policy
     {
@@ -57,7 +57,7 @@ namespace MarketPriceEdpGwAuthenticationExample
         public const int passwordMinNumberOfCategories = 3;
     }
 
-    class MarketPriceEdpGwAuthenticationExample
+    class MarketPriceRdpGwAuthenticationExample
     {
         /// <summary>The websocket used for retrieving market content.</summary>
         private ClientWebSocket _webSocket;
@@ -120,7 +120,7 @@ namespace MarketPriceEdpGwAuthenticationExample
 
         static void Main(string[] args)
         {
-            MarketPriceEdpGwAuthenticationExample example = new MarketPriceEdpGwAuthenticationExample();
+            MarketPriceRdpGwAuthenticationExample example = new MarketPriceRdpGwAuthenticationExample();
             example.ParseCommandLine(args);
             example.Run();
         }

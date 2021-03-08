@@ -66,7 +66,7 @@ import org.apache.http.util.EntityUtils;
  *   providing the updated token to the Real-Time endpoint before token expiration.
  */
 
-public class MarketPriceEdpGwServiceDiscovery {
+public class MarketPriceRdpGwServiceDiscovery {
 
     public static String port = "443";
     public static String user = "root";
@@ -365,14 +365,14 @@ public class MarketPriceEdpGwServiceDiscovery {
             cmd = parser.parse(options, args);
         } catch (org.apache.commons.cli.ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("MarketPriceEdpGwServiceDiscovery", options);
+            formatter.printHelp("MarketPriceRdpGwServiceDiscovery", options);
             System.exit(1);
             return;
         }
 
         if(cmd.hasOption("help"))
         {
-             formatter.printHelp("MarketPriceEdpGwServiceDiscovery", options);
+             formatter.printHelp("MarketPriceRdpGwServiceDiscovery", options);
              System.exit(0);
         }
         if(cmd.hasOption("port"))

@@ -360,7 +360,7 @@ def get_sts_token(current_refresh_token, url=None):
 
 
 def print_commandline_usage_and_exit(exit_code):
-    print('Usage: market_price_edpgw_service_discovery.py [--app_id app_id] '
+    print('Usage: market_price_rdpgw_service_discovery.py [--app_id app_id] '
           '[--user user] [--clientid clientid] [--password password] [--newPassword new_password] [--position position] [--auth_url auth_url] '
           '[--discovery_url discovery_url] [--scope scope] [--service service] [--region region] [--ric ric] [--hotstandby] [--help]')
     sys.exit(exit_code)

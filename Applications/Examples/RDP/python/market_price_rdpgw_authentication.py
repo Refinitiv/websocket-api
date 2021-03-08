@@ -336,13 +336,13 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "clientid=", "password=",
                                                       "newPassword=", "position=", "auth_url=", "scope=", "ric=", "service="])
     except getopt.GetoptError:
-        print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
+        print('Usage: market_price_rdpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
               '[--user user] [--clientid clientid] [--password password] [--newPassword new_password] [--position position] [--auth_url auth_url] '
               '[--scope scope] [--ric ric] [--service service] [--help]')
         sys.exit(2)
     for opt, arg in opts:
         if opt in "--help":
-            print('Usage: market_price_edpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
+            print('Usage: market_price_rdpgw_authentication.py [--hostname hostname] [--port port] [--app_id app_id] '
                   '[--user user] [--clientid clientid] [--password password] [--newPassword new_password] [--position position] [--auth_url auth_url] '
                   '[--scope scope] [--ric ric] [--service service] [--help]')
             sys.exit(0)

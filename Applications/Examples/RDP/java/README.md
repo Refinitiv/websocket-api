@@ -7,13 +7,13 @@ JSON-formatted market content over a Websocket connection from a Refinitiv Real-
 
 The examples are:
 
-* __MarketPriceEdpGwAuthentication__: Retrieves market-price content for a RIC after
+* __MarketPriceRdpGwAuthentication__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. The content is retrieved using endpoint information (host and port)
   supplied as input. This example maintains a session by proactively renewing authentication
   token before expiration.
 
-* __MarketPriceEdpGwServiceDiscovery__: Retrieves market-price content for a RIC after
+* __MarketPriceRdpGwServiceDiscovery__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. This example discovers the endpoint information using a service
   discovery URL using a region supplied as input. The content is retrieved using
@@ -59,13 +59,13 @@ are not intended to be used for measuring performance.
 
 ## Running the Examples
 
-### Running the MarketPriceEdpGwAuthentication Example
+### Running the MarketPriceRdpGwAuthentication Example
 
 To run the example:
   - Set the classpath that Ant gave you:
 	- `set CLASSPATH=<classpath from ant>` (Windows)
     - `export CLASSPATH=<classpath from ant>` (Linux)
-  - Run: `java MarketPriceEdpGwAuthentication --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
+  - Run: `java MarketPriceRdpGwAuthentication --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -89,13 +89,13 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 
-* `MarketPriceEdpGwAuthentication.java` - Source file for the MarketPriceEdpGwAuthentication example.
+* `MarketPriceRdpGwAuthentication.java` - Source file for the MarketPriceRdpGwAuthentication example.
 
-### Running the MarketPriceEdpGwServiceDiscovery Example
+### Running the MarketPriceRdpGwServiceDiscovery Example
 
 To run the example:
   - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
-  - Run: `java MarketPriceEdpGwServiceDiscovery --user <username> --password <password> --clientid <client ID>`
+  - Run: `java MarketPriceRdpGwServiceDiscovery --user <username> --password <password> --clientid <client ID>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -121,4 +121,4 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 
-* `MarketPriceEdpGwServiceDiscovery.java` - Source file for the MarketPriceEdpGwServiceDiscovery example.
+* `MarketPriceRdpGwServiceDiscovery.java` - Source file for the MarketPriceRdpGwServiceDiscovery example.

@@ -44,7 +44,7 @@ using Newtonsoft.Json.Linq;
  *   providing the updated token to the Real-Time endpoint before token expiration.
  */
 
-namespace MarketPriceEdpGwServiceDiscoveryExample
+namespace MarketPriceRdpGwServiceDiscoveryExample
 {
     static class Policy
     {
@@ -65,7 +65,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         public const int passwordMinNumberOfCategories = 3;
     }
 
-    class MarketPriceEdpGwServiceDiscoveryExample
+    class MarketPriceRdpGwServiceDiscoveryExample
     {
         /// <summary>The websocket(s) used for retrieving market content.</summary>
         private static Dictionary<string, WebSocketSession> _webSocketSessions = new Dictionary<string, WebSocketSession>();
@@ -341,7 +341,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
         /// <summary>Parses commandline config and runs the application.</summary>
         static void Main(string[] args)
         {
-            MarketPriceEdpGwServiceDiscoveryExample example = new MarketPriceEdpGwServiceDiscoveryExample();
+            MarketPriceRdpGwServiceDiscoveryExample example = new MarketPriceRdpGwServiceDiscoveryExample();
             example.ParseCommandLine(args);
             example.Run();
         }
@@ -480,7 +480,7 @@ namespace MarketPriceEdpGwServiceDiscoveryExample
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(param_url);
             webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
             webRequest.AllowAutoRedirect = false;
-            webRequest.UserAgent = "CSharpMarketPriceEdpGwServiceDiscoveryExample";
+            webRequest.UserAgent = "CSharpMarketPriceRdpGwServiceDiscoveryExample";
             try
             {
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();

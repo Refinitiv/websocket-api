@@ -55,7 +55,7 @@ import org.apache.http.util.EntityUtils;
  * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
  *   providing the updated token to the Real-Time endpoint before token expiration.
  */
-public class MarketPriceEdpGwAuthentication {
+public class MarketPriceRdpGwAuthentication {
 
     public static String server;
     public static String hostname = "127.0.0.1";
@@ -118,14 +118,14 @@ public class MarketPriceEdpGwAuthentication {
             cmd = parser.parse(options, args);
         } catch (org.apache.commons.cli.ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("MarketPriceEdpGwAuthentication", options);
+            formatter.printHelp("MarketPriceRdpGwAuthentication", options);
             System.exit(1);
             return;
         }
 
         if(cmd.hasOption("help"))
         {
-             formatter.printHelp("MarketPriceEdpGwAuthentication", options);
+             formatter.printHelp("MarketPriceRdpGwAuthentication", options);
              System.exit(0);
         }
         if(cmd.hasOption("hostname"))

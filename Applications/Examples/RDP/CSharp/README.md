@@ -6,13 +6,13 @@ JSON-formatted market content over a Websocket connection from a Refinitiv Real-
 
 The examples are:
 
-* __MarketPriceEdpGwAuthenticationExample__: Retrieves market-price content for a RIC after
+* __MarketPriceRdpGwAuthenticationExample__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. The content is retrieved using endpoint information (host and port)
   supplied as input. This example maintains a session by proactively renewing authentication
   token before expiration.
 
-* __MarketPriceEdpGwServiceDiscoveryExample__: Retrieves market-price content for a RIC after
+* __MarketPriceRdpGwServiceDiscoveryExample__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. This example discovers the endpoint information using a service 
   discovery URL using a region supplied as input. The content is retrieved using 
@@ -32,14 +32,14 @@ file and build it.
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ### Linux
-To build: `dotnet build CSharpEdpGwExamples_VS150.sln`
+To build: `dotnet build CSharpRdpGwExamples_VS150.sln`
 
 ## Running the Examples
 
-### Running the MarketPriceEdpGwAuthentication Example
+### Running the MarketPriceRdpGwAuthentication Example
 
 To run the example:
-  - Run: `dotnet MarketPriceEdpGwAuthenticationExample.dll --user <username> --password <password> --clientid clientID --hostname <Refinitiv Real-Time Service host>`
+  - Run: `dotnet MarketPriceRdpGwAuthenticationExample.dll --user <username> --password <password> --clientid clientID --hostname <Refinitiv Real-Time Service host>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -61,12 +61,12 @@ Option            |Description|
 NOTE about newPassword: Acceptable passwords may be 15 characters long and have a mix of letters (upper/lower), numbers and special characters.
 
 #### Source File Description
-* `MarketPriceEdpGwAuthenticationExample.cs` - Source file for the MarketPriceEdpGwAuthentication example.
-* `MarketPriceEdpGwAuthenticationExample.csproj` - visual studio project
+* `MarketPriceRdpGwAuthenticationExample.cs` - Source file for the MarketPriceRdpGwAuthentication example.
+* `MarketPriceRdpGwAuthenticationExample.csproj` - visual studio project
 
-### Running the MarketPriceEdpGwServiceDiscovery Example
+### Running the MarketPriceRdpGwServiceDiscovery Example
 
-  - Run: `dotnet MarketPriceEdpGwServiceDiscoveryExample.dll --user <username> --password <password> --clientid <clientID>`
+  - Run: `dotnet MarketPriceRdpGwServiceDiscoveryExample.dll --user <username> --password <password> --clientid <clientID>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -91,5 +91,5 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 
-* `MarketPriceEdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceEdpGwServiceDiscovery example.
-* `MarketPriceEdpGwServiceDiscoveryExample.csproj` - visual studio project
+* `MarketPriceRdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceRdpGwServiceDiscovery example.
+* `MarketPriceRdpGwServiceDiscoveryExample.csproj` - visual studio project

@@ -6,13 +6,13 @@ JSON-formatted market content over a Websocket connection from a Refinitiv Real-
 
 The examples are:
 
-* __market_price_edpgw_authentication.py__: Retrieves market-price content for a RIC after
+* __market_price_rdpgw_authentication.py__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. The content is retrieved using endpoint information (host and port)
   supplied as input. This example maintains a session by proactively renewing authentication
   token before expiration.
 
-* __market_price_edpgw_service_discovery.py__: Retrieves market-price content for a RIC after
+* __market_price_rdpgw_service_discovery.py__: Retrieves market-price content for a RIC after
   authenticating with an authentication server and using tokens sent by that server to keep
   the connection alive. This example discovers the endpoint information using a service
   discovery URL using a region supplied as input. The content is retrieved using
@@ -37,10 +37,10 @@ are not intended to be used for measuring performance.
 
 ## Running the Examples
 
-### Running the market\_price\_edpgw\_authentication Example
+### Running the market\_price\_rdpgw\_authentication Example
 
 To run the example:
-- Run `python3 market_price_edpgw_authentication.py --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
+- Run `python3 market_price_rdpgw_authentication.py --user <username> --password <password> --clientid <client ID> --hostname <Refinitiv Real-Time Service host>`
 - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -64,12 +64,12 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 
-* `market_price_edpgw_authentication.py` - Source file for the market\_price\_edpgw\_authentication example.
+* `market_price_rdpgw_authentication.py` - Source file for the market\_price\_rdpgw\_authentication example.
 
-### Running the market\_price\_edpgw\_service\_discovery Example
+### Running the market\_price\_rdpgw\_service\_discovery Example
 
 To run the example:
-- Run `python3 market_price_edpgw_service_discovery.py --user <username> --password <password> --clientid <client ID>`
+- Run `python3 market_price_rdpgw_service_discovery.py --user <username> --password <password> --clientid <client ID>`
 - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -96,4 +96,4 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 
-* `market_price_edpgw_service_discovery.py` - Source file for the market\_price\_edpgw\_service\_discovery example.
+* `market_price_rdpgw_service_discovery.py` - Source file for the market\_price\_rdpgw\_service\_discovery example.
