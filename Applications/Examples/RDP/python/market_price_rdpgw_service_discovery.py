@@ -161,7 +161,7 @@ class WebSocketSession:
             print(json.dumps(pong_json, sort_keys=True, indent=2, separators=(',', ':')))
 
     # Callback events from WebSocketApp
-    def _on_message(self, message):
+    def _on_message(self, ws, message):
         """ Called when message received, parse message into JSON for processing """
         print("RECEIVED on " + self.session_name + ":")
         message_json = json.loads(message)
@@ -170,11 +170,11 @@ class WebSocketSession:
         for singleMsg in message_json:
             self._process_message(singleMsg)
 
-    def _on_error(self, error):
+    def _on_error(self, ws, error):
         """ Called when websocket error has occurred """
         print(error + " for " + self.session_name)
 
-    def _on_close(self):
+    def _on_close(self, ws):
         """ Called when websocket is closed """
         self.web_socket_open = False
         self.logged_in = False
@@ -185,7 +185,7 @@ class WebSocketSession:
             time.sleep(3)
             self.connect()
 
-    def _on_open(self):
+    def _on_open(self, ws):
         """ Called when handshake is complete and websocket is open, send login """
 
         print("WebSocket successfully connected for " + self.session_name + "!")
@@ -197,11 +197,12 @@ class WebSocketSession:
         # Start websocket handshake
         ws_address = "wss://{}/WebSocket".format(self.host)
         print("Connecting to WebSocket " + ws_address + " for " + self.session_name + "...")
-        self.web_socket_app = websocket.WebSocketApp(ws_address, on_message=self._on_message,
+        self.web_socket_app = websocket.WebSocketApp(ws_address, 
+                                                     on_message=self._on_message,
                                                      on_error=self._on_error,
                                                      on_close=self._on_close,
+                                                     on_open=self._on_open,
                                                      subprotocols=['tr_json2'])
-        self.web_socket_app.on_open = self._on_open
 
         # Event loop
         wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
