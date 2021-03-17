@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2021 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 
@@ -79,7 +79,7 @@ public class MarketPriceRdpGwServiceDiscovery {
     public static String discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
     public static String ric = "/TRI.N";
     public static String service = "ELEKTRON_DD";
-    public static String scope = "trapi";
+    public static String scope = "trapi.streaming.pricing.read";
     public static JSONObject authJson = null;
     public static JSONObject serviceJson = null;
     public static List<String> hostList = new LinkedList<String>();

@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2021 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 using System;
@@ -95,7 +95,7 @@ namespace MarketPriceRdpGwAuthenticationExample
         private string _appId = "256";
 
         /// <summary>The configured scope used when requesting the token.</summary>
-        private string _scope = "trapi";
+        private string _scope = "trapi.streaming.pricing.read";
 
         /// <summary>The configured RIC used when requesting price data.</summary>
         private string _ric = "/TRI.N";

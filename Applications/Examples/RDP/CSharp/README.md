@@ -55,7 +55,7 @@ Option            |Description|
 `--newPassword`   | OPTIONAL. New password provided by user to change password to.
 `--port`          | OPTIONAL. Port of the Refinitiv Real-Time Service. Defaults to 443.
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
-`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.streaming.pricing.read.
 `--service`       | OPTIONAL. The requested Real-Time service name or service ID. Defaults to ELEKTRON_DD.
 
 NOTE about newPassword: Acceptable passwords may be 15 characters long and have a mix of letters (upper/lower), numbers and special characters.
@@ -83,7 +83,7 @@ Option            |Description|
 `--newPassword`   | OPTIONAL. New password provided by user to change password to.
 `--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery.  The region is either "amer", "emea", or "apac". Defaults to "amer".
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
-`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.
+`--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.streaming.pricing.read.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
 
 NOTE about hotstandby: Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
