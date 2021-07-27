@@ -110,7 +110,7 @@ namespace MarketPriceAuthenticationExample
 
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */

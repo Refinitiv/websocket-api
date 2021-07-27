@@ -395,10 +395,15 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                         _expiration_in_ms *= 1000;
                     if (!isRefresh)
                         _original_expiration_in_ms = _expiration_in_ms;
-                }
 
-                webResponse.Close();
-                return true;
+                    webResponse.Close();
+                    return true;
+                }
+                else
+                {
+                    webResponse.Close();
+                    return false;
+                }
 
             }
             catch (WebException e)
@@ -485,7 +490,7 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
             {
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
@@ -553,8 +558,12 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                             System.Environment.Exit(1);
                         }
                     }
+                    return true;
                 }
-                return true;
+                else
+                {
+                    return false;
+                }
             }
             catch (WebException e)
             {
