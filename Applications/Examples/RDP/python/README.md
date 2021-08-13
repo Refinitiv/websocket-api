@@ -27,6 +27,8 @@ These applications are intended as basic usage examples. Some of the design choi
 were made to favor simplicity and readability over performance. These applications
 are not intended to be used for measuring performance.
 
+NOTE: All RDP examples must be run with Python3.0 or greater.
+
 ## Setup
 ### Windows/Linux/macOS
 1. __Install Python__
@@ -37,7 +39,7 @@ are not intended to be used for measuring performance.
     - Run (in order):
       - `pip install requests`
       - `pip install websocket-client`
-	  **The websocket-client must be version 0.49 or greater**
+	  **The websocket-client must be version 1.1.0 or greater**
 
 ## Running the Examples
 
