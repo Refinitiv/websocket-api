@@ -32,6 +32,8 @@ The examples are found in the Applications/Examples/RDP folder with language spe
 * Authenticating via RDP, Connecting to a Refinitiv Real-Time service, and requesting a single item; examples handle session management or abiltiy to re-authenticate to renew authentication tokens
 * Discover which RDP endpoint to connect to by making a service discovery request to RDP and using this information to connect to the Refintiv Data Platform Real-Time Service to receive Real-Time content.
 
+IMPORTANT NOTE: When specifying a 'region' as input to RDP Service Discovery applications, please consult [RTO documentation available on Refinitiv Developer Community] (https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api/documentation) for a valid list of available regions. Default has been changed to "us-east-1" for region in sample applications starting with tag WSA-1.1.7.
+
 # Contributing
 In the event you would like to contribute to this repository, it is required that you read and sign the following:
 

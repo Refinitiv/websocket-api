@@ -119,7 +119,7 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
         private static bool _hotstandby = false;
 
         /// <summary> Specifies a region to get endpoint(s) from the Refinitiv Data Platform service discovery</summary>
-        private static string _region = "amer";
+        private static string _region = "us-east-1";
 
         /// <summary>hosts returned by service discovery</summary>
         private static List<Tuple<string,string>> _hosts = new List<Tuple<string, string>>();
@@ -514,21 +514,8 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                             * Services not fitting this pattern are ignored
                             */
 
-                        if(_region.Equals("amer"))
-                        {
-                            if (((string)endpoints[i]["location"][0]).StartsWith("us-") == false)
-                                continue;
-                        }
-                        else if (_region.Equals("emea"))
-                        {
-                            if (((string)endpoints[i]["location"][0]).StartsWith("eu-") == false)
-                                continue;
-                        }
-                        else if (_region.Equals("apac"))
-                        {
-                            if (((string)endpoints[i]["location"][0]).StartsWith("ap-") == false)
-                                continue;
-                        }
+                        if (((string)endpoints[i]["location"][0]).StartsWith(_region) == false)
+                            continue;
 
                         if (_hotstandby && locations.Count == 1)
                         {
@@ -546,7 +533,7 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                     {
                         if(_hosts.Count < 2)
                         {
-                            Console.WriteLine("hotstandby support requires at least two hosts");
+                            Console.WriteLine("Expected 2 hosts but received: {0} or the region: {1} is not present in list of endpoints\n", _hosts.Count, _region);
                             System.Environment.Exit(1);
                         }
                     }
@@ -554,7 +541,7 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                     {
                         if (_hosts.Count == 0)
                         {
-                            Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
+                            Console.WriteLine("The region: {0} is not present in list of endpoints\n", _region);
                             System.Environment.Exit(1);
                         }
                     }
@@ -752,11 +739,6 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                         if (i + 1 >= args.Length)
                             GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _region = args[++i];
-                        if(!_region.Equals("amer") && !_region.Equals("emea") && !_region.Equals("apac"))
-                        {
-                            Console.WriteLine("Unknown region \"" + _region + "\". The region must be either \"amer\", \"emea\", or \"apac\".");
-                            Environment.Exit(1);
-                        }
                         break;
                     case "--ric":
                         if (i + 1 >= args.Length)

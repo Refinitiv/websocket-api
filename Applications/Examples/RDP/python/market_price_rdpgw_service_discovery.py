@@ -55,7 +55,7 @@ user = ''
 clientid = ''
 client_secret = ''
 scope = 'trapi.streaming.pricing.read'
-region = 'amer'
+region = 'us-east-1'
 ric = '/TRI.N'
 service = 'ELEKTRON_DD'
 hostList = []
@@ -241,16 +241,8 @@ def query_service_discovery(url=None):
         print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         for index in range(len(response_json['services'])):
-
-            if region == "amer":
-                if not response_json['services'][index]['location'][0].startswith("us-"):
-                    continue
-            elif region == "emea":
-                if not response_json['services'][index]['location'][0].startswith("eu-"):
-                    continue
-            elif region == "apac":
-                if not response_json['services'][index]['location'][0].startswith("ap-"):
-                    continue
+            if not response_json['services'][index]['location'][0].startswith(region):
+                continue
 
             if not hotstandby:
                 if len(response_json['services'][index]['location']) == 2:
@@ -264,11 +256,11 @@ def query_service_discovery(url=None):
 
         if hotstandby:
             if len(hostList) < 2:
-                print("hotstandby support requires at least two hosts")
+                print("Expected 2 hosts but received:", len(hostList), "or the region:", region, "is not present in list of endpoints")
                 sys.exit(1)
         else:
             if len(hostList) == 0:
-                print("No host found from Refinitiv Data Platform service discovery")
+                print("The region:", region, "is not present in list of endpoints")
                 sys.exit(1)
 
         return True
@@ -485,9 +477,6 @@ if __name__ == "__main__":
             service = arg
         elif opt in "--region":
             region = arg
-            if region != "amer" and region != "emea" and region != 'apac':
-                print("Unknown region \"" + region + "\". The region must be either \"amer\", \"emea\", or \"apac\".")
-                sys.exit(1)
         elif opt in "--ric":
             ric = arg
         elif opt in "--hotstandby":

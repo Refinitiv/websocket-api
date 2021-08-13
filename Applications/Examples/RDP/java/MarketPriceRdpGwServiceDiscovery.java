@@ -87,7 +87,7 @@ public class MarketPriceRdpGwServiceDiscovery {
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
     public static boolean hotstandby = false;
-    public static String region = "amer";
+    public static String region = "us-east-1";
     
     final private static int passwordLengthMask               = 0x1;
     final private static int passwordUppercaseLetterMask      = 0x2;
@@ -413,11 +413,6 @@ public class MarketPriceRdpGwServiceDiscovery {
         if(cmd.hasOption("region"))
         {
             region = cmd.getOptionValue("region");
-            if(!region.equals("amer") && !region.equals("emea") && !region.equals("apac"))
-            {
-                System.out.println("Unknown region \"" + region + "\". The region must be either \"amer\", \"emea\", or \"apac\".");
-                System.exit(1);
-            }
         }
         if(cmd.hasOption("newPassword")) {
         	newPassword = cmd.getOptionValue("newPassword");
@@ -476,22 +471,9 @@ public class MarketPriceRdpGwServiceDiscovery {
             for (int i = 0; i < endpointArray.length(); ++i)
             {
                 JSONObject endpoint = endpointArray.getJSONObject(i);
-
-                if(region.equals("amer"))
-                {
-                    if ( endpoint.getJSONArray("location").getString(0).startsWith("us-") == false )
-                        continue;
-                }
-                else if(region.equals("emea"))
-                {
-                    if ( endpoint.getJSONArray("location").getString(0).startsWith("eu-") == false )
-                        continue;
-                }
-                else if(region.equals("apac"))
-                {
-                    if ( endpoint.getJSONArray("location").getString(0).startsWith("ap-") == false )
-                        continue;
-                }
+                
+                if ( endpoint.getJSONArray("location").getString(0).startsWith(region) == false )
+                    continue;
 
                 if (!hotstandby)
                 {
@@ -515,7 +497,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             {
                 if(hostList.size() < 2)
                 {
-                    System.out.println("Error: Expected 2 hosts but received " + hostList.size());
+                    System.out.println("Error: Expected 2 hosts but received " + hostList.size() + " or the region: " + region + " is not present in list of endpoints" );
                     System.exit(1);
                 }
             }
@@ -523,7 +505,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             {
                 if (hostList.size() == 0)
                 {
-                    System.out.println("Error: No endpoints in response.");
+                    System.out.println("Error: The region: " + region + " is not present in list of endpoints");
                     System.exit(1);
                 }
             }

@@ -85,7 +85,7 @@ Option            |Description|
 `--hotstandby`    | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
 `--newPassword`   | OPTIONAL. New password provided by user to change password to.
 `--position`      | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
-`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery.  The region is either "amer", "emea", or "apac". Defaults to "amer".
+`--region`        | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. Default is "us-east-1". See RTO documentation for all valid regions.
 `--ric`           | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
 `--scope`         | OPTIONAL. Identifier for a resource name. Defaults to trapi.streaming.pricing.read.
 `--service`       | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
