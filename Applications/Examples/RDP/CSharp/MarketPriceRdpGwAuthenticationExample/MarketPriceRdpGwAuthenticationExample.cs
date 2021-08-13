@@ -473,56 +473,86 @@ namespace MarketPriceRdpGwAuthenticationExample
             _webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, _cts.Token).Wait();
         }
 
+        /// <summary>
+        /// This gets called when an option that requires an argument is called
+        /// without one. Prints usage and exits with a failure status.
+        /// </summary>
+        /// <param name="option"></param>
+        void GripeAboutMissingOptionArgumentAndExit(string option)
+        {
+            Console.WriteLine("Error: {0} requires an argument.", option);
+            PrintCommandLineUsageAndExit(1);
+        }
+
         /// <summary>Parses command-line arguments.</summary>
         /// <param name="args">Command-line arguments passed to the application.</param>
         void ParseCommandLine(string[] args)
         {
             for (int i = 0; i < args.Length; ++i)
             {
-                // all commands require an argument
-                if (i + 1 >= args.Length)
-                {
-                    Console.WriteLine("{0} requires an argument.", args[i]);
-                    PrintCommandLineUsageAndExit();
-                }
                 switch (args[i])
                 {
                     case "--app_id":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _appId = args[++i];
                         break;
                     case "--auth_url":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _authUrl = args[++i];
                         break;
                     case "--hostname":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _hostName = args[++i];
                         break;
                     case "--password":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _password = args[++i];
                         break;
                     case "--newPassword":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _newPassword = args[++i];
                         break;
                     case "--port":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _port = args[++i];
                         break;
                     case "--ric":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _ric = args[++i];
                         break;
                     case "--scope":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _scope = args[++i];
                         break;
                     case "--user":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _userName = args[++i];
                         break;
                     case "--clientid":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _clientId = args[++i];
                         break;
                     case "--service":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _service = args[++i];
+                        break;
+                    case "--help":
+                        PrintCommandLineUsageAndExit(0);
                         break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
-                        PrintCommandLineUsageAndExit();
+                        PrintCommandLineUsageAndExit(1);
                         break;
                 }
             }
@@ -530,13 +560,13 @@ namespace MarketPriceRdpGwAuthenticationExample
             if (_userName == null || _password == null || _clientId == null)
             {
                 Console.WriteLine("User, password and clientid must be specified on the command line");
-                PrintCommandLineUsageAndExit();
+                PrintCommandLineUsageAndExit(1);
             }
 
             if (_hostName == null)
             {
                 Console.WriteLine("hostname must be specified on the command line");
-                PrintCommandLineUsageAndExit();
+                PrintCommandLineUsageAndExit(1);
             }
 
             if (!(_newPassword == null))
@@ -589,10 +619,25 @@ namespace MarketPriceRdpGwAuthenticationExample
         }
 
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
-        void PrintCommandLineUsageAndExit()
+        void PrintCommandLineUsageAndExit(int exitStatus)
         {
-            Console.WriteLine("Usage: {0} [--app_id appId] [--auth_url url] [--auth_port port] [--hostname hostname] [--password password] [--newPassword new_password] [--port port] [--ric ric] [--scope scope] [--user user] [--clientid clientID] [--service service]", System.AppDomain.CurrentDomain.FriendlyName);
-            Environment.Exit(1);
+            Console.WriteLine("Usage:\n" +
+                "dotnet {0}.dll\n" +
+                "   [--app_id appId]              \n" +
+                "   [--auth_url url]              \n" +
+                "   [--auth_port port]            \n" +
+                "   [--hostname hostname]         \n" +
+                "   [--password password]         \n" +
+                "   [--newPassword new_password]  \n" +
+                "   [--port port]                 \n" +
+                "   [--ric ric]                   \n" +
+                "   [--scope scope]               \n" +
+                "   [--user user]                 \n" +
+                "   [--clientid clientID]         \n" +
+                "   [--service service]           \n" +
+                "   [--help]                      \n",
+                System.AppDomain.CurrentDomain.FriendlyName);
+            Environment.Exit(exitStatus);
         }
 
         /// <summary>Recognises  characteristics of proposed new password.</summary>

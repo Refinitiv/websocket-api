@@ -196,6 +196,17 @@ namespace MarketPriceBatchViewExample
             Environment.Exit(1);
         }
 
+        /// <summary>
+        /// This gets called when an option that requires an argument is called
+        /// without one. Prints usage and exits with a failure status.
+        /// </summary>
+        /// <param name="option"></param>
+        void GripeAboutMissingOptionArgumentAndExit(string option)
+        {
+            Console.WriteLine("Error: {0} requires an argument.", option);
+            PrintCommandLineUsageAndExit(1);
+        }
+
         /// <summary>Parses command-line arguments.</summary>
         /// <param name="args">Command-line arguments passed to the application.</param>
         void parseCommandLine(string[] args)
@@ -207,10 +218,7 @@ namespace MarketPriceBatchViewExample
                     case "-a":
                     case "--app_id":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _appId = args[i + 1];
                         ++i;
                         break;
@@ -218,10 +226,7 @@ namespace MarketPriceBatchViewExample
                     case "-h":
                     case "--hostname":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _hostName = args[i + 1];
                         ++i;
                         break;
@@ -229,10 +234,7 @@ namespace MarketPriceBatchViewExample
                     case "-p":
                     case "--port":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _port = args[i + 1];
                         ++i;
                         break;
@@ -240,17 +242,18 @@ namespace MarketPriceBatchViewExample
                     case "-u":
                     case "--user":
                         if (i + 1 >= args.Length)
-                        {
-                            Console.WriteLine("{0} requires an argument.", args[i]);
-                            printCommandLineUsageAndExit();
-                        }
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
                         _userName = args[i + 1];
                         ++i;
                         break;
 
+                    case "--help":
+                        PrintCommandLineUsageAndExit(0);
+                        break;
+
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
-                        printCommandLineUsageAndExit();
+                        PrintCommandLineUsageAndExit(1);
                         break;
 
                 }
@@ -258,10 +261,17 @@ namespace MarketPriceBatchViewExample
         }
 
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
-        void printCommandLineUsageAndExit()
+        void PrintCommandLineUsageAndExit(int exitStatus)
         {
-            Console.WriteLine("Usage: {0} [ -h hostname ] [-p port] [-a appID] [-u user]", System.AppDomain.CurrentDomain.FriendlyName);
-            Environment.Exit(1);
+            Console.WriteLine("Usage:\n" +
+                "dotnet {0}.dll\n" +
+                "    [-h|--hostname <hostname>]    \n" +
+                "    [-p|--port <port>]            \n" +
+                "    [-a|--appID <appID>]          \n" +
+                "    [-u|--user <user>]            \n" +
+                "    [--help]                      \n",
+                System.AppDomain.CurrentDomain.FriendlyName);
+            Environment.Exit(exitStatus);
         }
     }
 }

@@ -5,3 +5,7 @@ xcuserdata/*
 .vs
 packages/
 obj/
+bin/
+Properties/
+Debug_WIN_VS*
+Release_WIN_VS*

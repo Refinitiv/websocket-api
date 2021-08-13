@@ -270,7 +270,7 @@ namespace MarketPriceAuthenticationExample
         void GripeAboutMissingOptionArgumentAndExit(string option)
         {
             Console.WriteLine("Error: {0} requires an argument.", option);
-            printCommandLineUsageAndExit(1);
+            PrintCommandLineUsageAndExit(1);
         }
 
         /// <summary>Parses command-line arguments.</summary>
@@ -335,12 +335,12 @@ namespace MarketPriceAuthenticationExample
                         break;
 
                     case "--help":
-                        printCommandLineUsageAndExit(0);
+                        PrintCommandLineUsageAndExit(0);
                         break;
 
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
-                        printCommandLineUsageAndExit(1);
+                        PrintCommandLineUsageAndExit(1);
                         break;
 
                 }
@@ -352,18 +352,18 @@ namespace MarketPriceAuthenticationExample
         }
 
         /// <summary>Prints usage information. Used when arguments cannot be parsed.</summary>
-        void printCommandLineUsageAndExit(int exitStatus)
+        void PrintCommandLineUsageAndExit(int exitStatus)
         {
             Console.WriteLine("Usage:\n" +
                 "dotnet {0}.dll\n" +
                 "   [-h|--hostname <hostname>]  \n" +
                 "   [-p|--port <port>]          \n" +
                 "   [-a|--app_id <appId>]       \n" +
-                "   [-u|--user <user>]          # Your Refinitiv Elektron username\n" +
-                "   [--password <password>]     # Your Refinitiv Elektron password\n" +
-                "   [--auth_hostname <host>]    # Hostname for the Refinitiv Elektron authentication service\n" +
-                "   [--auth_port <port>]        # Port for the Refinitiv Elektron authentication service\n" +
-                "   [--help]                    # Display this help screen and exit\n",
+                "   [-u|--user <user>]          \n" +
+                "   [--password <password>]     \n" +
+                "   [--auth_hostname <host>]    \n" +
+                "   [--auth_port <port>]        \n" +
+                "   [--help]                    \n",
                 System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(exitStatus);
         }
