@@ -1,6 +1,9 @@
 # Websocket API for Pricing Streaming and Real-Time Services #
 
-This API consists of a protocol specification and a set of example programs used to illustrate usage of the protocol to make websocket connections to Refinitiv Real-Time Distribution Systems, and, to Refinitiv Real-Time -- Optimized (cloud offering) available via Refinitiv Data Platform (RDP). These examples are built using widely available Websocket frameworks and follow the [protocol specification](https://github.com/Refinitiv/websocket-api/blob/master/WebsocketAPI_ProtocolSpecification.pdf) to demonstrate how to setup a websocket connection and use message constructs to receive Refinitiv Real-Time content. This API is governed by the same Apache 2 open source license as defined in the LICENSE.md file.
+This API consists of a protocol specification. Also included is a set of example programs used to illustrate implementation of the protocol to make websocket connections to Refinitiv Real-Time Distribution Systems, and, to Refinitiv Real-Time -- Optimized (cloud offering) available via Refinitiv Data Platform (RDP). These examples are built using certain widely available Websocket frameworks and follow the [protocol specification](https://github.com/Refinitiv/websocket-api/blob/master/WebsocketAPI_ProtocolSpecification.pdf) to demonstrate how to setup a websocket connection and use message constructs to receive Refinitiv Real-Time content. This API is governed by the same Apache 2 open source license as defined in the LICENSE.md file.
+
+Example Code Disclaimer:
+ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. REFINITIV MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF EXAMPLE CODE, OR THE INFORMATION, CONTENT OR MATERIALS USED IN CONNECTION WITH EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF EXAMPLE CODE IS AT YOUR SOLE RISK
 
 ## Refinitiv Real-Time Distribution System Examples
 These examples demonstrate the following usage:
