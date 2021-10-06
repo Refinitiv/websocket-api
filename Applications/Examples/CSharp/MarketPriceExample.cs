@@ -47,6 +47,9 @@ namespace MarketPriceExample
         /// <summary>The IP address, used as the application's position when logging in.</summary>
         private string _position;
 
+        /// <summary> When specified, a 'snapshot' is request sent with snapshot flag set to true to indicate to server that only a refresh is requested with no interest in updates. </summary>
+        private bool _snapshot = false;
+
         /// <summary>Parses commandline config and runs the application.</summary>
         static void Main(string[] args)
         {
@@ -139,16 +142,19 @@ namespace MarketPriceExample
 
                             if (!_loggedIn && (msg["State"] == null || msg["State"]["Data"] == "Ok"))
                             {
+                                string requestJsonString = "";
+
                                 /* Login was successful. */
                                 _loggedIn = true;
 
-                                /* Request an item. */
-                                sendMessage(
-                                    "{"
+                                requestJsonString = "{"
                                     + "\"ID\": 2,"
-                                    + "\"Key\": {\"Name\":\"TRI.N\"}"
-                                    + "}"
-                                    );
+                                    + "\"Key\": {\"Name\":\"TRI.N\"},"
+                                    + "\"Streaming\":" + (!_snapshot).ToString().ToLower()
+                                    + "}";
+
+                                /* Request an item. */
+                                sendMessage(requestJsonString);
                             }
                             break;
 
@@ -247,6 +253,9 @@ namespace MarketPriceExample
                         PrintCommandLineUsageAndExit(0);
                         break;
 
+                    case "--snapshot":
+                        _snapshot = true;
+                        break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
                         PrintCommandLineUsageAndExit(1);
@@ -265,6 +274,7 @@ namespace MarketPriceExample
                 "    [-p|--port <port>]            \n" +
                 "    [-a|--appID <appID>]          \n" +
                 "    [-u|--user <user>]            \n" +
+                "    [--snapshot]                  \n" +
                 "    [--help]                      \n",
                 System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(exitStatus);

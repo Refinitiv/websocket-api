@@ -32,7 +32,7 @@ run with Python2.7 or greater.
 
 ## Command Line Usage
 
-```python market_price.py [--hostname hostname] [--port port] [--app_id appID] [--user user]```
+```python market_price.py [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
 
 ```python market_price_batch_view.py [--hostname hostname ] [--port port] [--app_id appID] [--user user]```
 

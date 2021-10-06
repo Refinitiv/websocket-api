@@ -28,7 +28,7 @@ were made to favor simplicity and readability over performance. This application
 is not intended to be used for measuring performance.
 ## Command Line Usage
 
-```java MarketPrice [--hostname hostname] [--port port] [--app_id appID] [--user user]```
+```java MarketPrice [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
 
 ```java MarketPriceBatchView [--hostname hostname ] [--port port] [--app_id appID] [--user user]```
 

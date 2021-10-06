@@ -28,7 +28,7 @@ were made to favor simplicity and readability over performance. This application
 is not intended to be used for measuring performance.
 ## Command Line Usage
 
-```go run market_price.go [--hostname hostname] [--port port] [--app_id appID] [--user user]```
+```go run market_price.go [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
 
 ```go run market_price_batch_view.go [--hostname hostname ] [--port port] [--app_id appID] [--user user]```
 

@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"strconv"
 )
 
 func main() {
@@ -32,6 +33,7 @@ func main() {
 	port := flag.String("port", "15000", "websocket port")
 	user := flag.String("user", "root", "user")
 	appId := flag.String("app_id", "256", "application id")
+	snapshot := flag.Bool("snapshot", false, "snapshot")
 
 	positionDefault := ""
 	host, _ := os.Hostname()
@@ -86,7 +88,7 @@ func main() {
 			json.Unmarshal(message, &jsonArray)
 
 			for _,singleMsg := range jsonArray {
-				processMessage(c, singleMsg)
+				processMessage(c, singleMsg, snapshot)
 			}
 		}
 	}()
@@ -116,11 +118,11 @@ func main() {
 }
 
 // Parse JSON message at a high level
-func processMessage(c *websocket.Conn, message map[string]interface{} ) {
+func processMessage(c *websocket.Conn, message map[string]interface{}, snapshot *bool ) {
 	switch message["Type"] {
 		case "Refresh":
 			if(message["Domain"] == "Login"){
-				sendMarketPriceRequest(c)
+				sendMarketPriceRequest(c, snapshot)
 			}
 		case "Ping":
 			sendMessage(c, []byte(`{"Type":"Pong"}`))
@@ -129,8 +131,8 @@ func processMessage(c *websocket.Conn, message map[string]interface{} ) {
 }
 
 // Create and send simple Market Price request
-func sendMarketPriceRequest(c *websocket.Conn) {
-	sendMessage(c, []byte(`{"ID":2,"Key":{"Name":"TRI.N"}}`))
+func sendMarketPriceRequest(c *websocket.Conn, snapshot *bool) {
+	sendMessage(c, []byte(`{"ID":2,"Key":{"Name":"TRI.N"},` + `"Streaming":` + strconv.FormatBool(!*snapshot) + `}`))
 }
 
 // Helper to send bytes over WebSocket connection

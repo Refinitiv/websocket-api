@@ -41,7 +41,7 @@ packages.
 
 ## Command Line Usage
 
-``` MarketPriceExample.exe [--hostname hostname] [--port port] [--app_id appID] [--user user]```
+``` MarketPriceExample.exe [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
 
 ``` MarketPriceBatchViewExample.exe [--hostname hostname ] [--port port] [--app_id appID] [--user user]```
 

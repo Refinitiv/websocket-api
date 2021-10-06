@@ -21,6 +21,7 @@ $port = '15000'
 $user = 'root'
 $app_id = '256'
 $position = Socket.ip_address_list[0].ip_address
+$snapshot = false
 
 # Get command line parameters
 opt_parser = OptionParser.new do |opt|
@@ -45,8 +46,12 @@ opt_parser = OptionParser.new do |opt|
     $position = position
   end
   
+  opt.on('--snapshot','SNAPSHOT') do |snapshot|
+    $snapshot = true
+  end
+  
   opt.on('--help','HELP') do |help|
-	puts 'Usage: market_price.rb [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--help]'
+	puts 'Usage: market_price.rb [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]'
 	exit 0
   end
 end
@@ -59,7 +64,8 @@ def send_market_price_request(ws)
     'ID' => 2,
     'Key' => {
       'Name' => 'TRI.N'
-    }
+    },
+    'Streaming' => !$snapshot
   }
   ws.send mp_req_json_hash.to_json.to_s
   puts 'SENT:'

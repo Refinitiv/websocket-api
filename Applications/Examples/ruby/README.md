@@ -28,7 +28,7 @@ were made to favor simplicity and readability over performance. This application
 is not intended to be used for measuring performance.
 ## Command Line Usage
 
-```ruby market_price.rb [--hostname hostname] [--port port] [--app_id appID] [--user user]```
+```ruby market_price.rb [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
 
 ```ruby market_price_batch_view.rb [--hostname hostname ] [--port port] [--app_id appID] [--user user]```
 

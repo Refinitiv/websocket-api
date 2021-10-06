@@ -36,6 +36,7 @@ hostname = "127.0.0.1"
 port = "15000"
 user = "root"
 app_id = "256"
+snapshot = FALSE
 
 # Get command line parameters
 GetoptLong(
@@ -43,7 +44,8 @@ GetoptLong(
   "port=s","",
   "user=s","",
   "app_id=s","",
-  "position=s",""
+  "position=s","",
+  "snapshot!",""
 )
 
 # Start websocket handshake
@@ -53,7 +55,7 @@ con = websocket(ws_address, port=as.integer(port), subprotocol="tr_json2", versi
 
 # Create and send simple Market Price request
 send_market_price_request = function(con) {
-  mp_req_json_string = "{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"}}"
+  mp_req_json_string = paste("{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"},", "\"Streaming\":", tolower(!snapshot), "}")
   mp_req_json = fromJSON(mp_req_json_string)
   websocket_write(mp_req_json_string, con)
   cat("SENT:\n")

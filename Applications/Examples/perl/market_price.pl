@@ -19,12 +19,14 @@ use Sys::Hostname;
 use utf8;
 use Encode;
 
+
 # Global Default Variables
 $hostname = "127.0.0.1";
 $port = "15000";
 $user = "root";
 $app_id = "256";
 $position = inet_ntoa(scalar(gethostbyname(hostname())) || 'localhost');
+$snapshot = 0;
 $help = "";
 
 # Global Variables
@@ -38,10 +40,10 @@ sub myhand
 }
 
 # Get command line parameters
-GetOptions ('hostname=s' => \$hostname, 'port=s' => \$port, 'user=s' => \$user, 'app_id=s' => \$app_id, 'position=s' => \$position, 'help' => \$help);
+GetOptions ('hostname=s' => \$hostname, 'port=s' => \$port, 'user=s' => \$user, 'app_id=s' => \$app_id, 'position=s' => \$position, 'snapshot+' => \$snapshot, 'help' => \$help);
 
 if(not $help eq "") {
-	print "Usage: market_price.pl [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--help]\n";
+	print "Usage: market_price.pl [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]\n";
 	exit 0;
 }
 
@@ -102,10 +104,11 @@ sub process_message {
 sub send_market_price_request {
 	my ($tx) = @_;
 	my %mp_req_json_hash = (
-        'ID' => 2,
-        'Key' => {
-            'Name' => 'TRI.N',
-        },
+		'ID' => 2,
+		'Key' => {
+			'Name' => 'TRI.N',
+		},
+		'Streaming' => ($snapshot) >= 1 ? 0 : 1,
 	);
 
 	my $json = encode_json \%mp_req_json_hash;

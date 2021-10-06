@@ -15,6 +15,7 @@ var appId = '256'
 var user = 'root'
 var ip = require("ip");
 var position = ip.address();
+var snapshot = false;
 
 // Global Variables
 var webSocketClosed = false;
@@ -42,9 +43,13 @@ if(argv.position)
 {
 	position = argv.position.toString();
 }
+if (argv.snapshot)
+{
+	snapshot = true;
+}
 if(argv.help)
 {
-	console.log("Usage: market_price.js [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--help]");
+	console.log("Usage: market_price.js [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]");
 	process.exit();
 }
 
@@ -61,7 +66,7 @@ _websocket.onerror = onError;
 // Create and send simple Market Price request
 function sendMarketPriceRequest()
 {
-	var msg = '{"ID":2,"Key":{"Name":"TRI.N"}}';
+	var msg = '{"ID":2,"Key":{"Name":"TRI.N"},' + '"Streaming":' + (!snapshot).toString() +'}';
 	_websocket.send(msg);
 	console.log("SENT:");
 	console.log(JSON.stringify(JSON.parse(msg), null, 2));

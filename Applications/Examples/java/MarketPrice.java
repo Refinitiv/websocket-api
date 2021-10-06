@@ -31,6 +31,7 @@ public class MarketPrice {
     public static String position = "";
     public static String appId = "256";
     public static WebSocket ws = null;
+    public static boolean snapshot = false;
 
 	public static void main(String[] args) {
 		
@@ -41,6 +42,7 @@ public class MarketPrice {
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
         options.addOption(Option.builder().longOpt("user").hasArg().desc("user").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
+        options.addOption(Option.builder().longOpt("snapshot").desc("snapshot").build());
 		options.addOption(Option.builder().longOpt("help").desc("help").build());
 		
         CommandLineParser parser = new DefaultParser();
@@ -80,6 +82,10 @@ public class MarketPrice {
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			}
+        }
+        if(cmd.hasOption("snapshot"))
+        {
+            snapshot = true;
         }
 
         server = String.format("ws://%s:%s/WebSocket", hostname, port);
@@ -190,8 +196,13 @@ public class MarketPrice {
      * @throws JSONException
      */
     public static void sendRequest(WebSocket websocket) throws JSONException {
-        String requestJsonString;
-        requestJsonString = "{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"}}";
+        String requestJsonString = "";
+
+        requestJsonString = "{"
+                          + "\"ID\":2,"
+                          + "\"Key\":{\"Name\":\"TRI.N\"},"
+                          + "\"Streaming\":" + Boolean.toString(!snapshot)
+                          + "}";
         JSONObject mpRequestJson = new JSONObject(requestJsonString);
         websocket.sendText(requestJsonString);
         System.out.println("SENT:\n" + mpRequestJson.toString(2));

@@ -24,6 +24,7 @@ port = '15000'
 user = 'root'
 app_id = '256'
 position = socket.gethostbyname(socket.gethostname())
+snapshot = False
 
 # Global Variables
 web_socket_app = None
@@ -58,7 +59,9 @@ def send_market_price_request(ws):
         'Key': {
             'Name': 'TRI.N',
         },
+        'Streaming': not snapshot,
     }
+
     ws.send(json.dumps(mp_req_json))
     print("SENT:")
     print(json.dumps(mp_req_json, sort_keys=True, indent=2, separators=(',', ':')))
@@ -122,13 +125,13 @@ if __name__ == "__main__":
 
     # Get command line parameters
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "position="])
+        opts, args = getopt.getopt(sys.argv[1:], "", ["help", "hostname=", "port=", "app_id=", "user=", "position=", "snapshot"])
     except getopt.GetoptError:
-        print('Usage: market_price.py [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--help]')
+        print('Usage: market_price.py [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]')
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("--help"):
-            print('Usage: market_price.py [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--help]')
+            print('Usage: market_price.py [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]')
             sys.exit(0)
         elif opt in ("--hostname"):
             hostname = arg
@@ -140,6 +143,8 @@ if __name__ == "__main__":
             user = arg
         elif opt in ("--position"):
             position = arg
+        elif opt in "--snapshot":
+            snapshot = True
 
     # Start websocket handshake
     ws_address = "ws://{}:{}/WebSocket".format(hostname, port)
