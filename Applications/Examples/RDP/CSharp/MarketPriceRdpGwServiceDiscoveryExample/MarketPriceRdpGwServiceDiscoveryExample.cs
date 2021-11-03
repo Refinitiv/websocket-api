@@ -249,50 +249,41 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
             /// <summary>Reads data from the WebSocket and parses to JSON message</summary>
             private void ReceiveMessage()
             {
-                var readBuffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
-                MemoryStream memoryStream = null;
-                byte[] dataBuffer = null;
-
-                while (true)
+                using (MemoryStream memoryStream = new MemoryStream(BUFFER_SIZE * 5))
                 {
-                    var result = WebSocket.ReceiveAsync(readBuffer, Cts.Token);
-                    if (result.IsFaulted)
+                    var readBuffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
+                    Task<WebSocketReceiveResult> result = null;
+                    do
                     {
-                        Console_CancelKeyPress(this, null);
-                    }
-                    else
-                    {
-                        if (!result.Result.EndOfMessage)
-                        {
-                            if (memoryStream == null) memoryStream = new MemoryStream(BUFFER_SIZE * 5);
+                        result = WebSocket.ReceiveAsync(readBuffer, Cts.Token);
 
-                            memoryStream.Write(readBuffer.Array, readBuffer.Offset, readBuffer.Count);
-                            readBuffer = new ArraySegment<byte>(new byte[BUFFER_SIZE]);
+                        result.Wait();
+
+                        if (result.IsFaulted)
+                        {
+                            Console.WriteLine("Read message failed " + result.Exception.Message);
+                            Console_CancelKeyPress(this, null);
                         }
                         else
                         {
-                            if (memoryStream != null)
-                            {
-                                memoryStream.Write(readBuffer.Array, readBuffer.Offset, readBuffer.Count);
-                                dataBuffer = memoryStream.GetBuffer();
-                                memoryStream.Dispose();
-                            }
-                            else
-                            {
-                                dataBuffer = readBuffer.Array;
-                            }
-                            break;
+                            memoryStream.Write(readBuffer.Array, readBuffer.Offset, result.Result.Count);
                         }
                     }
+                    while (!result.Result.EndOfMessage);
+
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+
+                    using (StreamReader reader = new StreamReader(memoryStream, Encoding.ASCII))
+                    {
+                        /* Received message(s). */
+                        JArray messages = JArray.Parse(reader.ReadToEnd());
+                        /* Print the message (format the object string for easier reading). */
+                        Console.WriteLine("RECEIVED on {0}:\n{1}\n", Name, JsonConvert.SerializeObject(messages, Formatting.Indented));
+
+                        for (int index = 0; index < messages.Count; ++index)
+                            ProcessJsonMsg(messages[index]);
+                    }
                 }
-
-                /* Received message(s). */
-                JArray messages = JArray.Parse(Encoding.ASCII.GetString(dataBuffer));
-                /* Print the message (format the object string for easier reading). */
-                Console.WriteLine("RECEIVED on {0}:\n{1}\n", Name, JsonConvert.SerializeObject(messages, Formatting.Indented));
-
-                for (int index = 0; index < messages.Count; ++index)
-                    ProcessJsonMsg(messages[index]);
             }
 
             /// <summary>
