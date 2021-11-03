@@ -161,7 +161,7 @@ def on_error(_, error):
     print(error)
 
 
-def on_close(_):
+def on_close(_, close_status_code, close_msg):
     """ Called when websocket is closed """
     global web_socket_open
     web_socket_open = False

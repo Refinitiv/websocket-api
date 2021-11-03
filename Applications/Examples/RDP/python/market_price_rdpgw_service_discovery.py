@@ -174,7 +174,7 @@ class WebSocketSession:
         """ Called when websocket error has occurred """
         print(error + " for " + self.session_name)
 
-    def _on_close(self, ws):
+    def _on_close(self, ws, close_status_code, close_msg):
         """ Called when websocket is closed """
         self.web_socket_open = False
         self.logged_in = False
