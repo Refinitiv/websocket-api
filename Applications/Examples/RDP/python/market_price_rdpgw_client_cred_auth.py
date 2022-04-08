@@ -315,8 +315,8 @@ def get_auth_token(url=None):
 
 def print_commandline_usage_and_exit(exit_code):
     print('Usage: market_price_rdpgw_client_cred_auth.py [--app_id app_id] '
-          '[--clientid clientid] [--clientsecret client secret] [--position position] [--auth_url auth_url] '
-          '[--hostname hostname] [--port port] [--hostname2 hostname] [--port2 port] ' 
+          '--clientid clientid --clientsecret client secret [--position position] [--auth_url auth_url] '
+          '[--hostname hostname] [--port port] [--standbyhostname hostname] [--standbyport port] ' 
           '[--discovery_url discovery_url] [--scope scope] [--service service]'
           '[--region region] [--ric ric] [--hotstandby] [--help]')
     sys.exit(exit_code)
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", [
             "help", "app_id=", "clientsecret=", "clientid=", 
-            "hostname=", "port=", "hostname2=", "port2=", 
+            "hostname=", "port=", "standbyhostname=", "standbyport=", 
             "position=", "auth_url=", "discovery_url=", 
             "scope=", "service=", "region=", "ric=", "hotstandby"])
     except getopt.GetoptError:
@@ -344,11 +344,11 @@ if __name__ == "__main__":
             clientid = arg
         elif opt in "--hostname":
             hostName = arg
-        elif opt in "--hostname2":
+        elif opt in "--standbyhostname":
             hostName2= arg
         elif opt in "--port":
             port = arg
-        elif opt in "--port2":
+        elif opt in "--standbyport":
             port2= arg
         elif opt in "--position":
             position = arg

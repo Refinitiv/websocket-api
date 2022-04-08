@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2018-2021 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2022 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 
@@ -21,6 +21,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.json.*;
 import org.apache.commons.cli.*;
@@ -42,10 +44,9 @@ import org.apache.http.util.EntityUtils;
 /*
  * This example demonstrates authenticating via Refinitiv Data Platform, using an
  * authentication token to discover Refinitiv Real-Time service endpoint, and
- * using the endpoint and authentitcation to retrieve market content.
- *
- * This example maintains a session by proactively renewing the authentication
- * token before expiration.
+ * using the endpoint and authentitcation to retrieve market content. Specifically
+ * for authentication, this application uses the client credentials grant type
+ * connection to version 2 (v2) of RDP.
  *
  * This example can run with optional hotstandby support. Without this support, the application
  * will use a load-balanced interface with two hosts behind the load balancer. With hot standly
@@ -62,20 +63,21 @@ import org.apache.http.util.EntityUtils;
  *   from Refinitiv Data Platform.
  * - Requesting market-price content.
  * - Printing the response content.
- * - Periodically proactively re-authenticating to Refinitiv Data Platform, and
- *   providing the updated token to the Real-Time endpoint before token expiration.
+ * - Upon disconnect, re-request authentication token to reconnect to Refinitiv Data
+ *   Platform endpoint(s) if it is no longer valid.
  */
 
-public class MarketPriceRdpGwServiceDiscovery {
+public class MarketPriceRdpGwClientCredAuth {
 
     public static String port = "443";
-    public static String user = "root";
+    public static String port2 = "443";
+    public static String hostName = "";
+    public static String hostName2 = "";
     public static String clientid = "";
+    public static String clientsecret = "";
     public static String position = "";
     public static String appId = "256";
-    public static String password = "";
-    public static String newPassword = "";
-    public static String authUrl = "https://api.refinitiv.com:443/auth/oauth2/v1/token";
+    public static String authUrl = "https://api.refinitiv.com/auth/oauth2/v2/token";
     public static String discoveryUrl = "https://api.refinitiv.com/streaming/pricing/v1/";
     public static String ric = "/TRI.N";
     public static String service = "ELEKTRON_DD";
@@ -89,22 +91,18 @@ public class MarketPriceRdpGwServiceDiscovery {
     public static boolean hotstandby = false;
     public static String region = "us-east-1";
     
-    final private static int passwordLengthMask               = 0x1;
-    final private static int passwordUppercaseLetterMask      = 0x2;
-    final private static int passwordLowercaseLetterMask      = 0x4;
-    final private static int passwordDigitMask                = 0x8;
-    final private static int passwordSpecialCharacterMask     = 0x10;
-    final private static int passwordInvalidCharacterMask     = 0x20;
+    /**
+     * Helper class for date time stamp formatting.
+     */
+    public static class DateTimeStamp
+    {
+        /** Name to use when printing messages sent/received over this WebSocket. */
+        private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.n");
 
-
-    // Default password policy
-    final private static int passwordLengthMin                = 30;
-    final private static int passwordUppercaseLetterMin       = 1;
-    final private static int passwordLowercaseLetterMin       = 1;
-    final private static int passwordDigitMin                 = 1;
-    final private static int passwordSpecialCharacterMin      = 1;
-    final private static String passwordSpecialCharacterSet   = "~!@#$%^&*()-_=+[]{}|;:,.<>/?";
-    final private static int passwordMinNumberOfCategories    = 3;
+        public static String getCurrentTime() {
+            return formatter.format(LocalDateTime.now());
+        }
+    }
 
     /**
      * Class representing a session over a WebSocket.
@@ -125,6 +123,9 @@ public class MarketPriceRdpGwServiceDiscovery {
 
         /** Whether the session has successfully logged in. */
         boolean _isLoggedIn = false;
+
+        /** Whether the session was disconnected and needs a new authentication token. */
+        boolean _needNewToken = false;
 
         /** Static map used by WebSocketAdapter callbacks to find the associated WebSocketSession object. */
         public static Map<WebSocket, WebSocketSession> webSocketSessionMap = new ConcurrentHashMap<WebSocket, WebSocketSession>();
@@ -154,7 +155,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             else
             {
                 /* Create new websocket. */
-                System.out.println("Connecting to WebSocket " + _url + " for " + _name + "...");
+                System.out.println(DateTimeStamp.getCurrentTime() + " Connecting to WebSocket " + _url + " for " + _name + "...");
 
                 try {
                     _websocket = websocketFactory.createSocket(_url)
@@ -165,7 +166,7 @@ public class MarketPriceRdpGwServiceDiscovery {
                                  * Called when message received, parse message into JSON for processing
                                  */
                                 public void onTextMessage(WebSocket websocket, String message) throws JSONException {
-                                    System.out.println("RECEIVED on " + _name +":");
+                                    System.out.println(DateTimeStamp.getCurrentTime() + " RECEIVED on " + _name +":");
                                     WebSocketSession webSocketSession = webSocketSessionMap.get(websocket);
 
                                     JSONArray jsonArray = new JSONArray(message);
@@ -179,7 +180,7 @@ public class MarketPriceRdpGwServiceDiscovery {
                                  * Called when handshake is complete and websocket is open, send login
                                  */
                                 public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws JSONException {
-                                    System.out.println("WebSocket successfully connected for " + _name + "!");
+                                    System.out.println(DateTimeStamp.getCurrentTime() + " WebSocket successfully connected for " + _name + "!");
                                     sendLoginRequest(true);
                                 }
 
@@ -188,8 +189,8 @@ public class MarketPriceRdpGwServiceDiscovery {
                                  */
                                 public void onConnectError(WebSocket websocket, WebSocketException e)
                                 {
-                                    System.out.println("Connect error for " + _name + ":" + e);
-                                    reconnect(websocket);
+                                    System.out.println(DateTimeStamp.getCurrentTime() + " Connect error for " + _name + ":" + e);
+                                    reconnect(websocket, false);
                                 }
 
                                 /**
@@ -201,28 +202,37 @@ public class MarketPriceRdpGwServiceDiscovery {
                                         boolean closedByServer)
 
                                 {
-                                    System.out.println("WebSocket disconnected for " + _name + ".");
-                                    reconnect(websocket);
+                                    System.out.println(DateTimeStamp.getCurrentTime() + " WebSocket disconnected for " + _name + ".");
+                                    reconnect(websocket, true);
                                 }
 
                                 /**
                                  * Reconnect after a delay.
                                  */
-                                public void reconnect(WebSocket websocket)
+                                public void reconnect(WebSocket websocket, boolean needNewToken)
                                 {
                                     WebSocketSession webSocketSession = webSocketSessionMap.get(websocket);
                                     webSocketSession.isLoggedIn(false);
+                                    webSocketSession.needNewToken(needNewToken);
 
-                                    System.out.println("Reconnecting to " + _name + " in 3 seconds...");
+                                    do {
+                                        try {
+                                            Thread.sleep(3000);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                            System.exit(1);
+                                        }
 
-                                    try {
-                                        Thread.sleep(3000);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                        System.exit(1);
-                                    }
-
-                                    webSocketSession.connect();
+                                        if (needNewToken && webSocketSession.needNewToken())
+                                        {
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            webSocketSession.connect();
+                                            break;
+                                        }
+                                    } while(true);
                                 }
                         })
                     .addExtension(WebSocketExtension.PERMESSAGE_DEFLATE);
@@ -249,11 +259,8 @@ public class MarketPriceRdpGwServiceDiscovery {
             loginJson.getJSONObject("Key").getJSONObject("Elements").put("ApplicationId", appId);
             loginJson.getJSONObject("Key").getJSONObject("Elements").put("Position", position);
 
-            if (!isFirstLogin) // If this isn't our first login, we don't need another refresh for it.
-                loginJson.put("Refresh", false);
-
             _websocket.sendText(loginJson.toString());
-            System.out.println("SENT on " + _name + ": \n" + loginJson.toString(2));
+            System.out.println(DateTimeStamp.getCurrentTime() + " SENT on " + _name + ": \n" + loginJson.toString(2));
         }
 
         /**
@@ -265,7 +272,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             requestJsonString = "{\"ID\":2,\"Key\":{\"Name\":\"" + ric + "\",\"Service\":\"" + service + "\"}}";
             JSONObject mpRequestJson = new JSONObject(requestJsonString);
             _websocket.sendText(requestJsonString);
-            System.out.println("SENT on " + _name + ": \n" + mpRequestJson.toString(2));
+            System.out.println(DateTimeStamp.getCurrentTime() + " SENT on " + _name + ": \n" + mpRequestJson.toString(2));
         }
 
         /**
@@ -306,7 +313,7 @@ public class MarketPriceRdpGwServiceDiscovery {
                     String pongJsonString = "{\"Type\":\"Pong\"}";
                     JSONObject pongJson = new JSONObject(pongJsonString);
                     _websocket.sendText(pongJsonString);
-                    System.out.println("SENT on " + _name + ": \n" + pongJson.toString(2));
+                    System.out.println(DateTimeStamp.getCurrentTime() + " SENT on " + _name + ": \n" + pongJson.toString(2));
                     break;
                 default:
                     break;
@@ -314,17 +321,14 @@ public class MarketPriceRdpGwServiceDiscovery {
         }
 
         /**
-         * Send a login request on the websocket that includes our updated access token.
+         * Update access token.
          */
         public synchronized void updateToken(String updatedAuthToken)
         {
             _authToken = updatedAuthToken;
+            _needNewToken = false;
 
-            if (!_isLoggedIn)
-                return; // Websocket not connected or logged in yet. Initial login will include the access token.
-
-            System.out.println("Refreshing the access token for " + _name);
-            sendLoginRequest(false);
+            System.out.println(DateTimeStamp.getCurrentTime() + " Refreshing the access token for " + _name);
         }
 
         /**
@@ -335,6 +339,22 @@ public class MarketPriceRdpGwServiceDiscovery {
         {
             _isLoggedIn = isLoggedIn;
         }
+
+        /**
+         * Mark whether we has been disconnected and need a new authentication token.
+         */
+        public synchronized void needNewToken(boolean needNewToken)
+        {
+            _needNewToken = needNewToken;
+        }
+
+        /**
+         * Whether the session was disconnected and needs a new authentication token.
+         */
+        public synchronized boolean needNewToken()
+        {
+            return _needNewToken;
+        }
     }
 
     public static void main(String[] args) {
@@ -342,12 +362,13 @@ public class MarketPriceRdpGwServiceDiscovery {
         Options options = new Options();
 
         options.addOption(Option.builder().longOpt("port").hasArg().desc("port").build());
+        options.addOption(Option.builder().longOpt("standbyport").hasArg().desc("hotstandby port").build());
+        options.addOption(Option.builder().longOpt("hostname").hasArg().desc("hostname").valueSeparator().build());
+        options.addOption(Option.builder().longOpt("standbyhostname").hasArg().desc("hotstandby hostname").valueSeparator().build());
         options.addOption(Option.builder().longOpt("app_id").hasArg().desc("app_id").build());
-        options.addOption(Option.builder().longOpt("user").required().hasArg().desc("user").build());
         options.addOption(Option.builder().longOpt("clientid").required().hasArg().desc("clientid").build());
+        options.addOption(Option.builder().longOpt("clientsecret").required().hasArg().desc("clientsecret").build());
         options.addOption(Option.builder().longOpt("position").hasArg().desc("position").build());
-        options.addOption(Option.builder().longOpt("password").required().hasArg().desc("password").build());
-        options.addOption(Option.builder().longOpt("newPassword").hasArg().desc("newPassword").build());
         options.addOption(Option.builder().longOpt("auth_url").hasArg().desc("auth_url").build());
         options.addOption(Option.builder().longOpt("discovery_url").hasArg().desc("discovery_url").build());
         options.addOption(Option.builder().longOpt("ric").hasArg().desc("ric").build());
@@ -365,26 +386,30 @@ public class MarketPriceRdpGwServiceDiscovery {
             cmd = parser.parse(options, args);
         } catch (org.apache.commons.cli.ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("MarketPriceRdpGwServiceDiscovery", options);
+            formatter.printHelp("MarketPriceRdpGwClientCredAuth", options);
             System.exit(1);
             return;
         }
 
         if(cmd.hasOption("help"))
         {
-             formatter.printHelp("MarketPriceRdpGwServiceDiscovery", options);
+             formatter.printHelp("MarketPriceRdpGwClientCredAuth", options);
              System.exit(0);
         }
         if(cmd.hasOption("port"))
             port = cmd.getOptionValue("port");
+        if(cmd.hasOption("standbyport"))
+            port2 = cmd.getOptionValue("standbyport");
+        if(cmd.hasOption("hostname"))
+            hostName = cmd.getOptionValue("hostname");
+        if(cmd.hasOption("standbyhostname"))
+            hostName2 = cmd.getOptionValue("standbyhostname");
         if(cmd.hasOption("app_id"))
             appId = cmd.getOptionValue("app_id");
-        if(cmd.hasOption("user"))
-            user = cmd.getOptionValue("user");
         if(cmd.hasOption("clientid"))
             clientid = cmd.getOptionValue("clientid");
-        if(cmd.hasOption("password"))
-            password = cmd.getOptionValue("password");
+        if(cmd.hasOption("clientsecret"))
+            clientsecret = cmd.getOptionValue("clientsecret");
         if(cmd.hasOption("auth_url"))
             authUrl = cmd.getOptionValue("auth_url");
         if(cmd.hasOption("discovery_url"))
@@ -414,84 +439,58 @@ public class MarketPriceRdpGwServiceDiscovery {
         {
             region = cmd.getOptionValue("region");
         }
-        if(cmd.hasOption("newPassword")) {
-        	newPassword = cmd.getOptionValue("newPassword");
-        	if ((newPassword == null) || (newPassword.length() == 0)) {
-        		System.out.println("Value of the option newPassword cannot be empty");
-        		System.exit(1);
-        	}
-        	
-        	int result = checkPassword(newPassword);
-        	if ((result & passwordInvalidCharacterMask) != 0) {
-        		System.out.println("New password contains invalid symbol(s)");
-        		System.out.println("Valid symbols are [A-Z][a-z][0-9]" + passwordSpecialCharacterSet);
-        		System.exit(0);
-        	}
-        	
-        	if ((result & passwordLengthMask) != 0) {
-        		System.out.println("New password length should be at least " 
-        	            + passwordLengthMin
-        	            + " characters");
-        		System.exit(0);
-        	}
-        	int countCategories = 0;
-        	for (int mask = passwordUppercaseLetterMask; mask <= passwordSpecialCharacterMask; mask <<= 1) {
-        		if ((result & mask) == 0) {
-        			countCategories++;
-        		}
-        	}
-        	if (countCategories < passwordMinNumberOfCategories) {
-        		System.out.println("Password must contain characters belonging to at least three of the following four categories:\n"
-	    				+ "uppercase letters, lowercase letters, digits, and special characters.\n");
-        		System.exit(0);
-        	}
-         	if (!changePassword(authUrl)) {
-         		System.exit(0);
-         	}
-         	password = newPassword;
-         	newPassword = "";
-        }
 
         try {
 
-            // Connect to Refinitiv Data Platform and authenticate (using our username and password)
-            authJson = getAuthenticationInfo(null);
+            // Connect to Refinitiv Data Platform and authenticate (using our clientid and clientsecret)
+            authJson = getAuthenticationInfo();
             if (authJson == null)
                 System.exit(1);
 
-            // Get service information.
-            serviceJson = queryServiceDiscovery();
-            if (serviceJson == null)
-                System.exit(1);
-
-            // Create a host list based on the retrieved service information.
-            // If failing over on disconnect, get an endpoint with two locations.
-            // If opening multiple connections, get all endpoints that are in one location.
-            JSONArray endpointArray = serviceJson.getJSONArray("services");
-            for (int i = 0; i < endpointArray.length(); ++i)
+            if (hostName.isEmpty())
             {
-                JSONObject endpoint = endpointArray.getJSONObject(i);
-                
-                if ( endpoint.getJSONArray("location").getString(0).startsWith(region) == false )
-                    continue;
+                // Get service information.
+                serviceJson = queryServiceDiscovery();
+                if (serviceJson == null)
+                    System.exit(1);
 
-                if (!hotstandby)
+                // Create a host list based on the retrieved service information.
+                // If failing over on disconnect, get an endpoint with two locations.
+                // If opening multiple connections, get all endpoints that are in one location.
+                JSONArray endpointArray = serviceJson.getJSONArray("services");
+                for (int i = 0; i < endpointArray.length(); ++i)
                 {
-                    if (endpoint.getJSONArray("location").length() == 2)
+                    JSONObject endpoint = endpointArray.getJSONObject(i);
+
+                    if ( endpoint.getJSONArray("location").getString(0).startsWith(region) == false )
+                        continue;
+
+                    if (!hotstandby)
                     {
-                        hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
-                        break;
+                        if (endpoint.getJSONArray("location").length() == 2)
+                        {
+                            hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (endpoint.getJSONArray("location").length() == 1)
+                            hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
                     }
                 }
-                else
+            }
+            else
+            {
+                hostList.add(hostName + ":" + port);
+                if (hotstandby && !hostName2.isEmpty())
                 {
-                    if (endpoint.getJSONArray("location").length() == 1)
-                        hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+                    hostList.add(hostName2 + ":" + port2);
                 }
             }
 
-            // Determine when the access token expires. We will re-authenticate before then.
-            int expireTime = Integer.parseInt(authJson.getString("expires_in"));
+            //long expireTime = calcExpireTime(Integer.parseInt(authJson.getString("expires_in")));
+            long expireTime = calcExpireTime(authJson.getInt("expires_in"));
 
             if(hotstandby)
             {
@@ -516,30 +515,30 @@ public class MarketPriceRdpGwServiceDiscovery {
                 webSocketSession2 = new WebSocketSession("session2", hostList.get(1), authJson.getString("access_token"));
 
             while(true) {
-                // Continue using current token until 90% of initial time before it expires.
-                Thread.sleep(expireTime * 900);  // The value 900 means 90% of expireTime in milliseconds
-
-                // Connect to Refinitiv Data Platform and re-authenticate, using the refresh token provided in the previous response
-                authJson = getAuthenticationInfo(authJson);
-                if (authJson == null)
-                    System.exit(1);
- 
-                // If expiration time returned by refresh request is less then initial expiration time,
-                // re-authenticate using password
-                int refreshingExpireTime = Integer.parseInt(authJson.getString("expires_in"));
-                if (refreshingExpireTime != expireTime) {
-                   	System.out.println("expire time changed from " + expireTime + " sec to " + refreshingExpireTime + 
-                    		" sec; retry with password");
-                    authJson = getAuthenticationInfo(null);
+                // NOTE about connection recovery: When connecting or reconnecting 
+                //   to the server, a valid token must be used. 
+                //   Any requested token may be used in [re]connecting to the 
+                //   server upto the expires_in time. Therefore, check if token 
+                //   is valid before using it after reconnection and get a new token ONLY as needed
+                Thread.sleep(3000);
+                if (expireTime < System.currentTimeMillis()
+                    || webSocketSession1.needNewToken()
+                    || hotstandby && webSocketSession2.needNewToken())
+                {
+                    // Connect to Refinitiv Data Platform and re-authenticate using client_id and client_secret
+                    authJson = getAuthenticationInfo();
                     if (authJson == null)
                         System.exit(1);
-                    expireTime = Integer.parseInt(authJson.getString("expires_in"));
-                }
+ 
+                    // Update token expiration time
+                    //expireTime = calcExpireTime(Integer.parseInt(authJson.getString("expires_in")));
+                    expireTime = calcExpireTime(authJson.getInt("expires_in"));
 
-                // Send the updated access token over our WebSockets.
-                webSocketSession1.updateToken(authJson.getString("access_token"));
-                if (hotstandby)
-                    webSocketSession2.updateToken(authJson.getString("access_token"));
+                    // Updated access token for WebSocket connections.
+                    webSocketSession1.updateToken(authJson.getString("access_token"));
+                    if (hotstandby)
+                        webSocketSession2.updateToken(authJson.getString("access_token"));
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -548,173 +547,41 @@ public class MarketPriceRdpGwServiceDiscovery {
         }
     }
 
-    public static int checkPassword(String pwd) {
-    	int result = 0;
-    	
-    	if (pwd.length() < passwordLengthMin) {
-    		result |= passwordLengthMask;
-    	} 
-    	
-    	int countUpper = 0;
-    	int countLower = 0;
-        int countDigit = 0;
-        int countSpecial = 0;
-        
-        for (int i = 0; i < pwd.length(); i++) {
-        	char c = pwd.charAt(i);
-        	StringBuffer currentSymbol = new StringBuffer(1);
-        	currentSymbol.append(c);
-
-        	String charAsString = new String(currentSymbol);
-        	if ((!charAsString.matches("[A-Za-z0-9]")) && (!passwordSpecialCharacterSet.contains(currentSymbol))) {
-        		result |= passwordInvalidCharacterMask;
-        	}
-        	
-        	if (Character.isUpperCase(c)) {
-        		countUpper++;
-        	}
-        	if (Character.isLowerCase(c)) {
-        		countLower++;
-        	}
-        	if (Character.isDigit(c)) {
-        		countDigit++;
-        	}        	
-        	if (passwordSpecialCharacterSet.contains(currentSymbol))  {
-        		countSpecial++;
-        	}
-        }
-        
-        if (countUpper < passwordUppercaseLetterMin) {
-        	result |= passwordUppercaseLetterMask;
-        }
-        if (countLower < passwordLowercaseLetterMin) {
-        	result |= passwordLowercaseLetterMask;
-        }
-        if (countDigit < passwordDigitMin) {
-        	result |= passwordDigitMask;
-        }
-        if (countSpecial < passwordSpecialCharacterMin) {
-        	result |= passwordSpecialCharacterMask;
-        }
-        
-    	return result;
-    }
-    
     /**
-     * Send a request to change password and receive an answer.
-     */   
-    public static boolean changePassword(String authServer) {
-    	boolean result = false;
-        try
+     * Determine when the access token expires. We will re-authenticate before then.
+     * @param expireIn The "expires_in" value of the authentication response
+     * @return expire time.
+     */
+    private static long calcExpireTime(int expireIn) {
+        if (expireIn < 600)
         {
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
-
-            HttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-            HttpPost httppost = new HttpPost(authServer);
-            HttpParams httpParams = new BasicHttpParams();
-
-            // Disable redirect
-            httpParams.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
-
-            // Set request parameters.
-            List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-            params.add(new BasicNameValuePair("client_id", clientid));
-            params.add(new BasicNameValuePair("username", user));
-            params.add(new BasicNameValuePair("grant_type", "password"));
-            params.add(new BasicNameValuePair("password", password));
-            params.add(new BasicNameValuePair("newPassword", newPassword));
-            params.add(new BasicNameValuePair("scope", scope));
-            params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
-            System.out.println("Sending password change request to " + authUrl);
-
-            httppost.setParams(httpParams);
-            httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
-
-            //Execute and get the response.
-            HttpResponse response = httpclient.execute(httppost);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-            switch ( statusCode ) {
-            case HttpStatus.SC_OK:                  // 200
-                // Password change was successful.
-                System.out.println("Password was successfully changed:");
-                result = true;
-                break;
-
-            case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
-            case HttpStatus.SC_MOVED_TEMPORARILY:              // 302
-            case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
-            case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
-                // Perform URL redirect
-                System.out.println("Password change HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-                Header header = response.getFirstHeader("Location");
-                if( header != null )
-                {
-                    String newHost = header.getValue();
-                    if ( newHost != null )
-                    {
-                        System.out.println("Perform URL redirect to " + newHost);
-                        result = changePassword(newHost);
-                    } else {
-                    	result = false;
-                    }
-                }
-                break;
-            case HttpStatus.SC_BAD_REQUEST:                    // 400
-            case HttpStatus.SC_UNAUTHORIZED:                   // 401
-            case HttpStatus.SC_FORBIDDEN:                      // 403
-            case HttpStatus.SC_NOT_FOUND:                      // 404
-            case HttpStatus.SC_GONE:                           // 410
-            case 451:                                          // 451 Unavailable For Legal Reasons
-                // Error during change password attempt
-                System.out.println("Password change failure\n" 
-                		+ response.getStatusLine().getStatusCode() + " " 
-                		+ response.getStatusLine().getReasonPhrase());
-                System.out.println(responseJson.toString(2));
-                result = false;
-                break;
-            default:
-                // Retry the request to the API gateway
-                System.out.println("Changing password response HTTP code: " 
-                		+ response.getStatusLine().getStatusCode() + " " 
-                		+ response.getStatusLine().getReasonPhrase());
-                Thread.sleep(5000);
-                // CAUTION: This is sample code with infinite retries.
-                System.out.println("Retry change request");
-                result = changePassword(authServer);
-            }
-        } catch (Exception e) {
-            System.out.println("Password change failure:");
-            e.printStackTrace();
-            result = false;
+            // The value 900 means 90% of expireTime in milliseconds
+            return System.currentTimeMillis() + expireIn * 900;
         }
-        return result;
+        else
+        {
+            return System.currentTimeMillis() + 300 * 1000;
+        }
     }
-    
-    
+
     /**
      * Authenticate to Refinitiv Data Platform via an HTTP post request.
-     * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
+     * Initially authenticates using the specified client_secret. If information from a previous authentication response is provided, it instead authenticates using
      * the refresh token from that response. Uses authUrl as url.
-     * @param previousAuthResponseJson Information from a previous authentication, if available
      * @return A JSONObject containing the authentication information from the response.
      */
-    public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson) {
+    public static JSONObject getAuthenticationInfo() {
         String url = authUrl;
-        return getAuthenticationInfo(previousAuthResponseJson, url);
+        return getAuthenticationInfo(url);
     }
 
     /**
      * Authenticate to Refinitiv Data Platform via an HTTP post request.
-     * Initially authenticates using the specified password. If information from a previous authentication response is provided, it instead authenticates using
-     * the refresh token from that response.
-     * @param previousAuthResponseJson Information from a previous authentication, if available
+     * Authenticates using the specified client_secret.
      * @param url The HTTP post url
      * @return A JSONObject containing the authentication information from the response.
      */
-     public static JSONObject getAuthenticationInfo(JSONObject previousAuthResponseJson, String url) {
+     public static JSONObject getAuthenticationInfo(String url) {
          try
          {
              SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
@@ -727,27 +594,12 @@ public class MarketPriceRdpGwServiceDiscovery {
              httpParams.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
 
              // Set request parameters.
-             List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+             List<NameValuePair> params = new ArrayList<NameValuePair>(4);
+             params.add(new BasicNameValuePair("grant_type", "client_credentials"));
              params.add(new BasicNameValuePair("client_id", clientid));
-             params.add(new BasicNameValuePair("username", user));
-
-             if (previousAuthResponseJson == null)
-             {
-                 // First time through, send password.
-                 params.add(new BasicNameValuePair("grant_type", "password"));
-                 params.add(new BasicNameValuePair("password", password));
-                 params.add(new BasicNameValuePair("scope", scope));
-                 params.add(new BasicNameValuePair("takeExclusiveSignOnControl", "true"));
-                 System.out.println("Sending authentication request with password to " + url + "...");
-
-             }
-             else
-             {
-                 // Use the refresh token we got from the last authentication response.
-                 params.add(new BasicNameValuePair("grant_type", "refresh_token"));
-                 params.add(new BasicNameValuePair("refresh_token", previousAuthResponseJson.getString("refresh_token")));
-                 System.out.println("Sending authentication request with refresh token to " + url + "...");
-             }
+             params.add(new BasicNameValuePair("client_secret", clientsecret));
+             params.add(new BasicNameValuePair("scope", scope));
+             System.out.println(DateTimeStamp.getCurrentTime() + " Sending authentication request with client_secret to " + url + "...");
 
              httppost.setParams(httpParams);
              httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
@@ -761,7 +613,7 @@ public class MarketPriceRdpGwServiceDiscovery {
              case HttpStatus.SC_OK:                  // 200
                  // Authentication was successful. Deserialize the response and return it.
                  JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-                 System.out.println("Refinitiv Data Platform Authentication succeeded. RECEIVED:");
+                 System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform Authentication succeeded. RECEIVED:");
                  System.out.println(responseJson.toString(2));
                  return responseJson;
              case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
@@ -769,46 +621,38 @@ public class MarketPriceRdpGwServiceDiscovery {
              case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
              case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
                  // Perform URL redirect
-                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  Header header = response.getFirstHeader("Location");
                  if( header != null )
                  {
                      String newHost = header.getValue();
                      if ( newHost != null )
                      {
-                         System.out.println("Perform URL redirect to " + newHost);
-                         return getAuthenticationInfo(previousAuthResponseJson, newHost);
+                         System.out.println(DateTimeStamp.getCurrentTime() + " Perform URL redirect to " + newHost);
+                         return getAuthenticationInfo(newHost);
                      }
                  }
                  return null;
              case HttpStatus.SC_BAD_REQUEST:                    // 400
              case HttpStatus.SC_UNAUTHORIZED:                   // 401
-                 // Retry with username and password
-                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
-                 if (previousAuthResponseJson != null)
-                 {
-                     System.out.println("Retry with username and password");
-                     return getAuthenticationInfo(null);
-                 }
-                 return null;
              case HttpStatus.SC_FORBIDDEN:                      // 403
              case HttpStatus.SC_NOT_FOUND:                      // 404
              case HttpStatus.SC_GONE:                           // 410
              case 451:                                          // 451 Unavailable For Legal Reasons
-                 // Stop retrying with the request
-                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 // Stop trying the request
+                 System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  System.out.println("Stop retrying with the request");
                  return null;
              default:
-                 // Retry the request to Refinitiv Data Platform 
-                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                 // Retry the request with an appropriate delay
+                 System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                  Thread.sleep(5000);
                  // CAUTION: This is sample code with infinite retries.
-                 System.out.println("Retry the request to Refinitiv Data Platform");
-                 return getAuthenticationInfo(previousAuthResponseJson);
+                 System.out.println("Retrying auth request");
+                 return getAuthenticationInfo();
              }
          } catch (Exception e) {
-             System.out.println("Refinitiv Data Platform authentication failure:");
+             System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform authentication failure:");
              e.printStackTrace();
              return null;
          }
@@ -845,7 +689,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             httpget.setParams(httpParams);
             httpget.setHeader("Authorization", "Bearer " + authJson.getString("access_token"));
 
-            System.out.println("Sending service discovery request to " + url + "...");
+            System.out.println(DateTimeStamp.getCurrentTime() + " Sending service discovery request to " + url + "...");
 
             //Execute and get the response.
             HttpResponse response = httpclient.execute(httpget);
@@ -857,7 +701,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             case HttpStatus.SC_OK:                             // 200
                 // Service discovery was successful. Deserialize the response and return it.
                 JSONObject responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-                System.out.println("Refinitiv Data Platform service discovery succeeded. RECEIVED:");
+                System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform service discovery succeeded. RECEIVED:");
                 System.out.println(responseJson.toString(2));
                 return responseJson;
             case HttpStatus.SC_MOVED_PERMANENTLY:              // 301
@@ -865,14 +709,14 @@ public class MarketPriceRdpGwServiceDiscovery {
             case HttpStatus.SC_TEMPORARY_REDIRECT:             // 307
             case 308:                                          // 308 HttpStatus.SC_PERMANENT_REDIRECT
                 // Perform URL redirect
-                System.out.println("Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 Header header = response.getFirstHeader("Location");
                 if( header != null )
                 {
                     String newHost = header.getValue();
                     if ( newHost != null )
                     {
-                        System.out.println("Perform URL redirect to " + newHost);
+                        System.out.println(DateTimeStamp.getCurrentTime() + " Perform URL redirect to " + newHost);
                         return queryServiceDiscovery(newHost);
                     }
                 }
@@ -882,19 +726,19 @@ public class MarketPriceRdpGwServiceDiscovery {
             case HttpStatus.SC_GONE:                           // 410
             case 451:                                          // 451 Unavailable For Legal Reasons
                 // Stop retrying with the request
-                System.out.println(" Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 System.out.println("Stop retrying with the request");
                 return null;
             default:
-                // Retry the service discovery request
-                System.out.println("Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                // Retry the service discovery request with an appropriate delay
+                System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform service discovery HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
                 Thread.sleep(5000);
                 // CAUTION: This is sample code with infinite retries.
                 System.out.println("Retry the service discovery request");
                 return queryServiceDiscovery();
             }
         } catch (Exception e) {
-            System.out.println("Refinitiv Data Platform service discovery failure:");
+            System.out.println(DateTimeStamp.getCurrentTime() + " Refinitiv Data Platform service discovery failure:");
             e.printStackTrace();
             return null;
         }

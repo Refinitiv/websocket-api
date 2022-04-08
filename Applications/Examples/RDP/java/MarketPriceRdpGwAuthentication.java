@@ -363,13 +363,26 @@ public class MarketPriceRdpGwAuthentication {
                     }
                 }
                 break;
-            default:
-                // Error 4XX or 5XX
+            case HttpStatus.SC_FORBIDDEN:              // 403
+            case HttpStatus.SC_NOT_FOUND:              // 404
+            case HttpStatus.SC_GONE:                   // 410
+            case 451:                                  // 451 Unavailable For Legal Reasons
+                // Error during change password attempt
                 System.out.println("Password change failure\n" 
                 		+ response.getStatusLine().getStatusCode() + " " 
                 		+ response.getStatusLine().getReasonPhrase());
                 System.out.println(responseJson.toString(2));
                 result = false;
+                break;
+            default:
+                // Retry the request to the API gateway
+                System.out.println("Changing password response HTTP code: " 
+                		+ response.getStatusLine().getStatusCode() + " " 
+                		+ response.getStatusLine().getReasonPhrase());
+                Thread.sleep(5000);
+                // CAUTION: This is sample code with infinite retries.
+                System.out.println("Retry change request");
+                result = changePassword(authServer);
             }
         } catch (Exception e) {
             System.out.println("Password change failure:");
@@ -516,6 +529,8 @@ public class MarketPriceRdpGwAuthentication {
                 }
                 return null;
             case HttpStatus.SC_FORBIDDEN:                      // 403
+            case HttpStatus.SC_NOT_FOUND:                      // 404
+            case HttpStatus.SC_GONE:                           // 410
             case 451:                                          // 451 Unavailable For Legal Reasons
                 // Stop retrying with the request
                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
@@ -524,6 +539,8 @@ public class MarketPriceRdpGwAuthentication {
             default:
                 // Retry the request to Refinitiv Data Platform
                 System.out.println("Refinitiv Data Platform authentication HTTP code: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase());
+                Thread.sleep(5000);
+                // CAUTION: This is sample code with infinite retries.
                 System.out.println("Retry the request to Refinitiv Data Platform");
                 return getAuthenticationInfo(previousAuthResponseJson);
             }
