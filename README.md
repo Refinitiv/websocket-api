@@ -1,9 +1,13 @@
 # Websocket API for Pricing Streaming and Real-Time Services #
 
-This API consists of a protocol specification. Also included is a set of example programs used to illustrate implementation of the protocol to make websocket connections to Refinitiv Real-Time Distribution Systems, and, to Refinitiv Real-Time -- Optimized (cloud offering) available via Refinitiv Data Platform (RDP). These examples are built using certain widely available Websocket frameworks and follow the [protocol specification](https://github.com/Refinitiv/websocket-api/blob/master/WebsocketAPI_ProtocolSpecification.pdf) to demonstrate how to setup a websocket connection and use message constructs to receive Refinitiv Real-Time content. This API is governed by the same Apache 2 open source license as defined in the LICENSE.md file.
+This API consists of a protocol specification. Also included is a set of example programs used to illustrate implementation of the protocol to make websocket connections to Refinitiv Real-Time Distribution Systems, and, to Refinitiv Real-Time -- Optimized (RTO). RTO examples authenticate via Refinitiv Data Platform (RDP). These examples are built using certain widely available Websocket frameworks and follow the [protocol specification](https://github.com/Refinitiv/websocket-api/blob/master/WebsocketAPI_ProtocolSpecification.pdf) to demonstrate how to setup a websocket connection and use message constructs to receive Refinitiv Real-Time content. This API is governed by the same Apache 2 open source license as defined in the LICENSE.md file.
 
 Example Code Disclaimer:
 ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. REFINITIV MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF EXAMPLE CODE, OR THE INFORMATION, CONTENT OR MATERIALS USED IN CONNECTION WITH EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF EXAMPLE CODE IS AT YOUR SOLE RISK
+
+## What's New
+
+This release introduces oAuthClientCredentials authentication in Early Access in the Refinitiv Real-Time - Optimized (RTO) examples. A new RTO example written in Go has been added with support for oAuthClientCredentials. Please note that oAuthClientCredentials authentication method is available for _preview only_ with ability to obtain Service Account credentials and use it, _forthcoming_.
 
 ## Refinitiv Real-Time Distribution System Examples
 These examples demonstrate the following usage:
@@ -27,15 +31,16 @@ The examples are found under the Applications/Examples folder. Examples are prov
 
 More details for each example are included in a __README.md__ file in its respective folder.
 
-## Refinitiv Data Platform Examples
-These are examples written in Python, CSharp and Java that demonstrate consuming content from a Refinitiv Data Platform Real-Time Service. 
+## Refinitiv Real-Time - Optimized Examples
+These are examples written in Python, CSharp, Go and Java that demonstrate consuming content from Refinitiv Real-Time - Optimized (RTO).
 
 The examples are found in the Applications/Examples/RDP folder with language specific sub-folders. More details are included in a __README.md__ file in each example folder.
 
-* Authenticating via RDP, Connecting to a Refinitiv Real-Time service, and requesting a single item; examples handle session management or abiltiy to re-authenticate to renew authentication tokens
-* Discover which RDP endpoint to connect to by making a service discovery request to RDP and using this information to connect to the Refintiv Data Platform Real-Time Service to receive Real-Time content.
+* Authenticating via RDP, Connecting to a Refinitiv Real-Time service available in RTO, and requesting a single item; examples handle session management or abiltiy to re-authenticate to renew authentication tokens
+* Discover which RTO endpoint to connect to by making a service discovery request to RDP and using this information to connect to RTO to receive Real-Time content.
 
 IMPORTANT NOTE: When specifying a 'region' as input to RDP Service Discovery applications, please consult [RTO documentation available on Refinitiv Developer Community] (https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api/documentation) for a valid list of available regions. Default has been changed to "us-east-1" for region in sample applications starting with tag WSA-1.1.7.
+
 
 # Contributing
 In the event you would like to contribute to this repository, it is required that you read and sign the following:
