@@ -120,6 +120,9 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
         /// <summary>hosts returned by service discovery</summary>
         private static List<Tuple<string,string>> _hosts = new List<Tuple<string, string>>();
 
+        /// <summary>backup hosts for non-hotstandby that only have a single endpoint to use when multiples do not exist</summary>
+        private static List<Tuple<string, string>> _backupHosts = new List<Tuple<string, string>>();
+
         /// <summary> Specifies buffer size for each read from WebSocket.</summary>
         private static readonly int BUFFER_SIZE = 8192;
 
@@ -497,9 +500,14 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                             _hosts.Add(new Tuple<string,string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
                             continue;
                         }
-                        if (!_hotstandby && locations.Count == 2 && _hostName == null)
+                        if (!_hotstandby && locations.Count >= 2 && _hostName == null)
                         {
                             _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            continue;
+                        }
+                        else if (!_hotstandby && locations.Count == 1 && _hostName == null)
+                        {
+                            _backupHosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(), (endpoints[i]["port"]).ToString()));
                             continue;
                         }
                     }
@@ -516,9 +524,17 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                     {
                         if (_hosts.Count == 0)
                         {
-                            Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
-                            System.Environment.Exit(1);
+                            if (_backupHosts.Count > 0)
+                            {
+                                _hosts = _backupHosts;
+                            }
                         }
+                    }
+
+                    if (_hosts.Count == 0)
+                    {
+                        Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
+                        System.Environment.Exit(1);
                     }
                 }
                 return true;

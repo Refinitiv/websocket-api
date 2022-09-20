@@ -382,6 +382,7 @@ func queryServiceDiscovery(discoveryUrl string, token string, region string, hot
 	services := discoveryMap["services"].([]interface{})
 
 	var addresses []string
+	var backupAddresses [] string
 
 	for index := range services {
 		service := services[index].(map[string]interface{})
@@ -390,8 +391,11 @@ func queryServiceDiscovery(discoveryUrl string, token string, region string, hot
 			continue
 		}
 		if !hotstandby {
-			if len(location) == 2 {
+			if len(location) >= 2 {
 				addresses = append(addresses, fmt.Sprintf("%s:%g", service["endpoint"].(string), service["port"].(float64)))
+				break
+			} else if len(location) == 1 {
+				backupAddresses = append(backupAddresses, fmt.Sprintf("%s:%g", service["endpoint"].(string), service["port"].(float64)))
 				break
 			}
 		} else {
@@ -400,15 +404,21 @@ func queryServiceDiscovery(discoveryUrl string, token string, region string, hot
 			}
 		}
 	}
-
+	
 	if hotstandby {
 		if len(addresses) < 2 {
 			log.Fatalln("Expected 2 hosts but received:", len(addresses), "or the region:", region, "is not present in list of endpoints");
 		}
 	} else {
 		if len(addresses) == 0 {
-			log.Fatalln("The region:", region, "is not present in list of endpoints");
+			if len(backupAddresses) > 0 {
+				addresses = backupAddresses
+			}
 		}
+	}
+
+	if len(addresses) == 0 {
+		log.Fatalln("The region:", region, "is not present in list of endpoints");
 	}
 
 	addr := addresses[0]

@@ -85,6 +85,7 @@ public class MarketPriceRdpGwClientCredAuth {
     public static JSONObject authJson = null;
     public static JSONObject serviceJson = null;
     public static List<String> hostList = new LinkedList<String>();
+	public static List<String> backupHostList = new LinkedList<String>();
     public static WebSocketFactory websocketFactory = new WebSocketFactory();
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
@@ -467,9 +468,14 @@ public class MarketPriceRdpGwClientCredAuth {
 
                     if (!hotstandby)
                     {
-                        if (endpoint.getJSONArray("location").length() == 2)
+                        if (endpoint.getJSONArray("location").length() >= 2)
                         {
                             hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+                            break;
+                        }
+						else if (endpoint.getJSONArray("location").length() == 1)
+                        {
+                            backupHostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
                             break;
                         }
                     }
@@ -492,7 +498,7 @@ public class MarketPriceRdpGwClientCredAuth {
             //long expireTime = calcExpireTime(Integer.parseInt(authJson.getString("expires_in")));
             long expireTime = calcExpireTime(authJson.getInt("expires_in"));
 
-            if(hotstandby)
+            if (hotstandby)
             {
                 if(hostList.size() < 2)
                 {
@@ -500,14 +506,22 @@ public class MarketPriceRdpGwClientCredAuth {
                     System.exit(1);
                 }
             }
-            else
-            {
-                if (hostList.size() == 0)
-                {
-                    System.out.println("Error: The region: " + region + " is not present in list of endpoints");
-                    System.exit(1);
-                }
-            }
+			else
+			{
+				if (hostList.size() == 0)
+				{
+					if (backupHostList.size() > 0)
+					{
+						hostList = backupHostList;
+					}
+				}
+			}
+
+			if (hostList.size() == 0)
+			{
+				System.out.println("Error: The region: " + region + " is not present in list of endpoints");
+				System.exit(1);
+			}
 
             // Connect WebSocket(s).
             webSocketSession1 = new WebSocketSession("session1", hostList.get(0), authJson.getString("access_token"));
