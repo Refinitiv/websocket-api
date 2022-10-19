@@ -215,7 +215,7 @@ def query_service_discovery(url=None):
         print(str(datetime.now()) + " Refinitiv Data Platform Service discovery succeeded." + \
                 " RECEIVED:")
         print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
-
+        
         for index in range(len(response_json['services'])):
             if not response_json['services'][index]['location'][0].startswith(region):
                 continue
@@ -241,7 +241,8 @@ def query_service_discovery(url=None):
         else:
             if len(hostList) == 0:
                 if len(backupHostList) > 0:
-                    hostList = backupHostList
+                    for hostIndex in range(len(backupHostList)):
+                        hostList.append(backupHostList[hostIndex])
 
         if len(hostList) == 0:
             print("The region:", region, "is not present in list of endpoints")

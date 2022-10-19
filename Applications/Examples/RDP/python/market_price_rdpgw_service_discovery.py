@@ -270,7 +270,8 @@ def query_service_discovery(url=None):
         else:
             if len(hostList) == 0:
                 if len(backupHostList) > 0:
-                    hostList = backupHostList
+                    for hostIndex in range(len(backupHostList)):
+                        hostList.append(backupHostList[hostIndex])
 
         if len(hostList) == 0:
             print("The region:", region, "is not present in list of endpoints")
