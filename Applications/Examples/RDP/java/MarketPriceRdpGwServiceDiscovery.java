@@ -481,12 +481,12 @@ public class MarketPriceRdpGwServiceDiscovery {
 					if (endpoint.getJSONArray("location").length() >= 2)
 					{
 						hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
-						break;
+						continue;
 					}
 					else if (endpoint.getJSONArray("location").length() == 1)
 					{
 						backupHostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
-						break;
+						continue;
 					}
 				}
                 else

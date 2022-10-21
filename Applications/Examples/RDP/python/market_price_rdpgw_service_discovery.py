@@ -253,11 +253,11 @@ def query_service_discovery(url=None):
                 if len(response_json['services'][index]['location']) >= 2:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
                                     str(response_json['services'][index]['port']))
-                    break
+                    continue
                 if len(response_json['services'][index]['location']) == 1:
                     backupHostList.append(response_json['services'][index]['endpoint'] + ":" +
                                     str(response_json['services'][index]['port']))
-                    break
+                    continue
             else:
                 if len(response_json['services'][index]['location']) == 1:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +

@@ -393,10 +393,10 @@ func queryServiceDiscovery(discoveryUrl string, token string, region string, hot
 		if !hotstandby {
 			if len(location) >= 2 {
 				addresses = append(addresses, fmt.Sprintf("%s:%g", service["endpoint"].(string), service["port"].(float64)))
-				break
+				continue
 			} else if len(location) == 1 {
 				backupAddresses = append(backupAddresses, fmt.Sprintf("%s:%g", service["endpoint"].(string), service["port"].(float64)))
-				break
+				continue
 			}
 		} else {
 			if len(location) == 1 {
