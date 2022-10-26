@@ -83,6 +83,7 @@ public class MarketPriceRdpGwServiceDiscovery {
     public static JSONObject authJson = null;
     public static JSONObject serviceJson = null;
     public static List<String> hostList = new LinkedList<String>();
+	public static List<String> backupHostList = new LinkedList<String>();
     public static WebSocketFactory websocketFactory = new WebSocketFactory();
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
@@ -475,14 +476,19 @@ public class MarketPriceRdpGwServiceDiscovery {
                 if ( endpoint.getJSONArray("location").getString(0).startsWith(region) == false )
                     continue;
 
-                if (!hotstandby)
-                {
-                    if (endpoint.getJSONArray("location").length() == 2)
-                    {
-                        hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
-                        break;
-                    }
-                }
+				if (!hotstandby)
+				{
+					if (endpoint.getJSONArray("location").length() >= 2)
+					{
+						hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+						continue;
+					}
+					else if (endpoint.getJSONArray("location").length() == 1)
+					{
+						backupHostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+						continue;
+					}
+				}
                 else
                 {
                     if (endpoint.getJSONArray("location").length() == 1)
@@ -493,7 +499,7 @@ public class MarketPriceRdpGwServiceDiscovery {
             // Determine when the access token expires. We will re-authenticate before then.
             int expireTime = Integer.parseInt(authJson.getString("expires_in"));
 
-            if(hotstandby)
+            if (hotstandby)
             {
                 if(hostList.size() < 2)
                 {
@@ -501,14 +507,22 @@ public class MarketPriceRdpGwServiceDiscovery {
                     System.exit(1);
                 }
             }
-            else
-            {
-                if (hostList.size() == 0)
-                {
-                    System.out.println("Error: The region: " + region + " is not present in list of endpoints");
-                    System.exit(1);
-                }
-            }
+			else
+			{
+				if (hostList.size() == 0)
+				{
+					if (backupHostList.size() > 0)
+					{
+						hostList = backupHostList;
+					}
+				}
+			}
+
+			if (hostList.size() == 0)
+			{
+				System.out.println("Error: The region: " + region + " is not present in list of endpoints");
+				System.exit(1);
+			}
 
             // Connect WebSocket(s).
             webSocketSession1 = new WebSocketSession("session1", hostList.get(0), authJson.getString("access_token"));

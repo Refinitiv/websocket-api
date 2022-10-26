@@ -55,6 +55,7 @@ discovery_url = 'https://api.refinitiv.com/streaming/pricing/v1/'
 hostName = ''
 hostName2 = ''
 hostList = []
+backupHostList = []
 hotstandby = False
 port = 443
 port2 = 443
@@ -214,16 +215,20 @@ def query_service_discovery(url=None):
         print(str(datetime.now()) + " Refinitiv Data Platform Service discovery succeeded." + \
                 " RECEIVED:")
         print(json.dumps(response_json, sort_keys=True, indent=2, separators=(',', ':')))
-
+        
         for index in range(len(response_json['services'])):
             if not response_json['services'][index]['location'][0].startswith(region):
                 continue
 
             if not hotstandby:
-                if len(response_json['services'][index]['location']) == 2:
+                if len(response_json['services'][index]['location']) >= 2:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
                                     str(response_json['services'][index]['port']))
-                    break
+                    continue
+                if len(response_json['services'][index]['location']) == 1:
+                    backupHostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                    str(response_json['services'][index]['port']))
+                    continue
             else:
                 if len(response_json['services'][index]['location']) == 1:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
@@ -235,8 +240,13 @@ def query_service_discovery(url=None):
                 sys.exit(1)
         else:
             if len(hostList) == 0:
-                print("The region:", region, "is not present in list of endpoints")
-                sys.exit(1)
+                if len(backupHostList) > 0:
+                    for hostIndex in range(len(backupHostList)):
+                        hostList.append(backupHostList[hostIndex])
+
+        if len(hostList) == 0:
+            print("The region:", region, "is not present in list of endpoints")
+            sys.exit(1)
 
         return True
 

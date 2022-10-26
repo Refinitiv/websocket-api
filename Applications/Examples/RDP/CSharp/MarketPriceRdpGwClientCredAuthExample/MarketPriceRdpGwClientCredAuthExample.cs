@@ -49,11 +49,11 @@ using System.Security.Cryptography.X509Certificates;
  * - Platform endpoint(s) if it is no longer valid.
  */
 
-namespace MarketPriceRdpGwServiceDiscoveryExample
+namespace MarketPriceRdpGwClientCredAuthExample
 {
 
 
-    class MarketPriceRdpGwServiceDiscoveryExample
+    class MarketPriceRdpGwClientCredAuthExample
     {
         /// <summary>The websocket(s) used for retrieving market content.</summary>
         private static Dictionary<string, WebSocketSession> _webSocketSessions = new Dictionary<string, WebSocketSession>();
@@ -119,6 +119,9 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
 
         /// <summary>hosts returned by service discovery</summary>
         private static List<Tuple<string,string>> _hosts = new List<Tuple<string, string>>();
+
+        /// <summary>backup hosts for non-hotstandby that only have a single endpoint to use when multiples do not exist</summary>
+        private static List<Tuple<string, string>> _backupHosts = new List<Tuple<string, string>>();
 
         /// <summary> Specifies buffer size for each read from WebSocket.</summary>
         private static readonly int BUFFER_SIZE = 8192;
@@ -329,7 +332,7 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
         /// <summary>Parses commandline config and runs the application.</summary>
         static void Main(string[] args)
         {
-            MarketPriceRdpGwServiceDiscoveryExample example = new MarketPriceRdpGwServiceDiscoveryExample();
+            MarketPriceRdpGwClientCredAuthExample example = new MarketPriceRdpGwClientCredAuthExample();
             example.ParseCommandLine(args);
             example.Run();
         }
@@ -458,14 +461,14 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(param_url);
             webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
 
-            webRequest.UserAgent = "CSharpMarketPriceRdpGwServiceDiscoveryExample";
+            webRequest.UserAgent = "CSharpMarketPriceRdpGwClientCredAuthExample";
             webRequest.AllowAutoRedirect = false;
 
             try
             {
                 HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
-                if (webResponse.ContentLength > 0)
+                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
                 {
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
@@ -497,9 +500,14 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                             _hosts.Add(new Tuple<string,string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
                             continue;
                         }
-                        if (!_hotstandby && locations.Count == 2 && _hostName == null)
+                        if (!_hotstandby && locations.Count >= 2 && _hostName == null)
                         {
                             _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            continue;
+                        }
+                        else if (!_hotstandby && locations.Count == 1 && _hostName == null)
+                        {
+                            _backupHosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(), (endpoints[i]["port"]).ToString()));
                             continue;
                         }
                     }
@@ -516,9 +524,17 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                     {
                         if (_hosts.Count == 0)
                         {
-                            Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
-                            System.Environment.Exit(1);
+                            if (_backupHosts.Count > 0)
+                            {
+                                _hosts = _backupHosts;
+                            }
                         }
+                    }
+
+                    if (_hosts.Count == 0)
+                    {
+                        Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
+                        System.Environment.Exit(1);
                     }
                 }
                 return true;
@@ -641,7 +657,10 @@ namespace MarketPriceRdpGwServiceDiscoveryExample
                 {
                     Thread.Sleep((int)(3000)); // in ms
 
-                    session1 = _webSocketSessions["Session1"];
+                    if (_webSocketSessions.ContainsKey("Session1"))
+                    {
+                        session1 = _webSocketSessions["Session1"];
+                    }
                     if (_webSocketSessions.ContainsKey("Session2"))
                     {
                         session2 = _webSocketSessions["Session2"];

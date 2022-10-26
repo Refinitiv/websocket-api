@@ -63,6 +63,7 @@ region = 'us-east-1'
 ric = '/TRI.N'
 service = 'ELEKTRON_DD'
 hostList = []
+backupHostList = []
 hotstandby = False
 # Global Variables
 session2 = None
@@ -249,10 +250,14 @@ def query_service_discovery(url=None):
                 continue
 
             if not hotstandby:
-                if len(response_json['services'][index]['location']) == 2:
+                if len(response_json['services'][index]['location']) >= 2:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
                                     str(response_json['services'][index]['port']))
-                    break
+                    continue
+                if len(response_json['services'][index]['location']) == 1:
+                    backupHostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                    str(response_json['services'][index]['port']))
+                    continue
             else:
                 if len(response_json['services'][index]['location']) == 1:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
@@ -264,8 +269,13 @@ def query_service_discovery(url=None):
                 sys.exit(1)
         else:
             if len(hostList) == 0:
-                print("The region:", region, "is not present in list of endpoints")
-                sys.exit(1)
+                if len(backupHostList) > 0:
+                    for hostIndex in range(len(backupHostList)):
+                        hostList.append(backupHostList[hostIndex])
+
+        if len(hostList) == 0:
+            print("The region:", region, "is not present in list of endpoints")
+            sys.exit(1)
 
         return True
 
