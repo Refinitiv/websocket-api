@@ -29,15 +29,12 @@ is not intended to be used for measuring performance.
 
 ## Compiling Source
 ### Windows
-- Project files are included for Visual Studio 2012, 2013, and 2015. To compile the examples,
+- Project files are included for Visual Studio 2015. To compile the examples,
 open the appropriate solution file and build it.
 
 - This project uses WebSocketSharp to handle the WebSocket protocol, and JSON.NET to read
 JSON messages. Both packages are retrieved via Visual Studio's NuGet extension; if enabled,
 they will be downloaded automatically when the build is run.
-
-- Note: Visual Studio 2012 may require updating its NuGet extension in order to download these 
-packages.
 
 ## Command Line Usage
 

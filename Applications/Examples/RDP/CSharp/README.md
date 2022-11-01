@@ -52,14 +52,14 @@ are not intended to be used for measuring performance.
 
 ## Setup 
 ### Windows
-- Project files are included for Visual Studio 2017. To compile the examples, open the solution
+- Project files are included for Visual Studio 2019. To compile the examples, open the solution
 file and build it.
 
 - This project uses Newtonsoft.Json to read JSON messages. The package is retrieved via Visual
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ### Linux
-To build: `dotnet build CSharpRdpGwExamples_VS150.sln`
+To build: `dotnet build CSharpRdpGwExamples_VS160.sln`
 
 ## Running the Examples
 
