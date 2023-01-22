@@ -1,11 +1,14 @@
-.idea/*
+.idea/
 node_modules/
 .DS_Store
-xcuserdata/*
+xcuserdata/
 .vs
 packages/
 obj/
 bin/
+build/
+lib/
+.gradle/
 Properties/
 Debug_WIN_VS*
 Release_WIN_VS*
