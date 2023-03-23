@@ -29,7 +29,7 @@ is not intended to be used for measuring performance.
 
 ## Compiling Source
 ### Windows
-- Project files are included for Visual Studio 2015. To compile the examples,
+- Project files are included for Visual Studio 2022. To compile the examples,
 open the appropriate solution file and build it.
 
 - This project uses WebSocketSharp to handle the WebSocket protocol, and JSON.NET to read

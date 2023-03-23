@@ -52,21 +52,21 @@ are not intended to be used for measuring performance.
 
 ## Setup 
 ### Windows
-- Project files are included for Visual Studio 2019. To compile the examples, open the solution
+- Project files are included for Visual Studio 2022. To compile the examples, open the solution
 file and build it.
 
 - This project uses Newtonsoft.Json to read JSON messages. The package is retrieved via Visual
 Studio's NuGet extension; if enabled, they will be downloaded automatically when the build is run.
 
 ### Linux
-To build: `dotnet build CSharpRdpGwExamples_VS160.sln`
+To build: `dotnet build CSharpRdpGwExamples_NET6.0.sln`
 
 ## Running the Examples
 
 ### Running the MarketPriceRdpGwAuthentication Example
 
 To run the example:
-  - Run: `dotnet MarketPriceRdpGwAuthenticationExample.dll --user <username> --password <password> --clientid clientid --hostname <hostname>`
+  - Run: `dotnet MarketPriceRdpGwAuthenticationExample_NET6.0.dll --user <username> --password <password> --clientid clientid --hostname <hostname>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -89,11 +89,11 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 
 #### Source File Description
 * `MarketPriceRdpGwAuthenticationExample.cs` - Source file for the MarketPriceRdpGwAuthentication example.
-* `MarketPriceRdpGwAuthenticationExample.csproj` - visual studio project
+* `MarketPriceRdpGwAuthenticationExample_NET6.0.csproj` - visual studio project
 
 ### Running the MarketPriceRdpGwServiceDiscovery Example
 
-  - Run: `dotnet MarketPriceRdpGwServiceDiscoveryExample.dll --user <username> --password <password> --clientid <clientid>`
+  - Run: `dotnet MarketPriceRdpGwServiceDiscoveryExample_NET6.0.dll --user <username> --password <password> --clientid <clientid>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -119,11 +119,11 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 #### Source File Description
 
 * `MarketPriceRdpGwServiceDiscoveryExample.cs` - Source file for the MarketPriceRdpGwServiceDiscovery example.
-* `MarketPriceRdpGwServiceDiscoveryExample.csproj` - visual studio project
+* `MarketPriceRdpGwServiceDiscoveryExample_NET6.0.csproj` - visual studio project
 
 ### Running the MarketPriceRdpGwClientCredAuthExample Example
 
-  - Run: `dotnet MarketPriceRdpGwClientCredAuthExample.dll --clientid <clientid> --clientsecret <clientsecret> --hostname <hostname>`
+  - Run: `dotnet MarketPriceRdpGwClientCredAuthExample_NET6.0.dll --clientid <clientid> --clientsecret <clientsecret> --hostname <hostname>`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -151,4 +151,4 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 #### Source File Description
 
 * `MarketPriceRdpGwClientCredAuthExample.cs` - Source file for the MarketPriceRdpGwClientCredAuthExample example.
-* `MarketPriceRdpGwClientCredAuthExample.csproj` - visual studio project
+* `MarketPriceRdpGwClientCredAuthExample_NET6.0.csproj` - visual studio project
