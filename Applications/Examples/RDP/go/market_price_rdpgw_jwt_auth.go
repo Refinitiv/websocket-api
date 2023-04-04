@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2021 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2022 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 
@@ -26,6 +26,8 @@ import (
 	"net"
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 func getCurrentTime() (string) {
@@ -34,10 +36,10 @@ func getCurrentTime() (string) {
 
 func main() {
 
-	usage := "Usage: market_price_rdpgw_client_cred_auth.go --clientid clientid --clientsecret client secret " +
+	usage := "Usage: market_price_rdpgw_client_cred_auth.go --clientid clientid --jwkFile client JWK file " +
 		"[--app_id app_id] [--position position] [--auth_url auth_url] " +
 		"[--hostname hostname] [--port port] [--standbyhostname hostname] [--standbyport port] " +
-		"[--discovery_url discovery_url] [--scope scope] [--service service] " +
+		"[--discovery_url discovery_url] [--aud audience] [--scope scope] [--service service] " +
 		"[--region region] [--ric ric] [--hotstandby] [--help]"
 
 	// Get command line parameters
@@ -45,11 +47,12 @@ func main() {
 	port := flag.String("port", "443", "websocket port")
 	appId := flag.String("app_id", "256", "application id")
 	clientId := flag.String("clientid", "", "client id")
-	clientSecret := flag.String("clientsecret", "", "client secret")
+	clientJwk := flag.String("jwkFile", "", "client JWK file")
 	authUrl := flag.String("auth_url", "https://api.refinitiv.com/auth/oauth2/v2/token", "authentication url")
 	discoveryUrl := flag.String("discovery_url", "https://api.refinitiv.com/streaming/pricing/v1/", "discovery url")
 	hostname2 := flag.String("standbyhostname", "", "standby hostname")
 	port2 := flag.String("standbyport", "443", "standby port")
+	aud := flag.String("aud", "https://login.ciam.refinitiv.com/as/token.oauth2", "audience")
 	scope := flag.String("scope", "trapi.streaming.pricing.read", "scope")
 	service := flag.String("service", "ELEKTRON_DD", "service")
 	region := flag.String("region", "us-east-1", "region")
@@ -80,8 +83,8 @@ func main() {
 		return
 	}
 
-	if len(*clientId) == 0 || len(*clientSecret) == 0 {
-		log.Println("clientid and clientsecret are required options")
+	if len(*clientId) == 0 || len(*clientJwk) == 0 {
+		log.Println("clientid and client JWK are required options")
 		return
 	}
 
@@ -95,7 +98,7 @@ func main() {
 		}
 	}()
 
-	token, expired := getAuthToken(*authUrl, *clientId, *clientSecret, *scope)
+	token, expired := getAuthToken(*authUrl, *clientId, *clientJwk, *aud, *scope)
 
 	tokenTS := time.Now()
 
@@ -227,14 +230,14 @@ func main() {
 				deltaTime = 300
 			}
 			if time.Now().Sub(tokenTS).Seconds() >= deltaTime {
-				token, expired = getAuthToken(*authUrl, *clientId, *clientSecret, *scope)
+				token, expired = getAuthToken(*authUrl, *clientId, *clientJwk, *aud, *scope)
 				tokenTS = time.Now()
 			}
 			newToken <- token
 		case <-reconnect:
 			// Waiting a few seconds before attempting to reconnect
 			time.Sleep(4 * time.Second)
-			token, expired = getAuthToken(*authUrl, *clientId, *clientSecret, *scope)
+			token, expired = getAuthToken(*authUrl, *clientId, *clientJwk, *aud, *scope)
 			tokenTS = time.Now()
 			newToken <- token
 		}
@@ -269,7 +272,43 @@ func printJsonBytes(bytes []byte) {
 	log.Println(string(bytesJson))
 }
 
-func getAuthToken(authUrl string, clientId string, clientSecret string, scope string) (string, float64) {
+func getJwt(clientId string, clientJwk string, aud string) (string) {
+
+	// Read JWKS file
+	jwkData, err := ioutil.ReadFile(clientJwk)
+	if err != nil {
+		log.Fatalln("Error when opening JWK file: ", err)
+	}
+
+	// Create JWKS from JSON
+	jwk, err := jwk.ParseKey(jwkData)
+	if err != nil {
+		log.Fatalln("Failed to create JWKS from JSON: ", err)
+	}
+
+	jwt.Settings(jwt.WithFlattenAudience(true))
+
+	// Create JWT with claims
+	token_jwt := jwt.New()
+	token_jwt.Set( "iss", clientId)
+	token_jwt.Set( "sub", clientId)
+	token_jwt.Set( "aud", aud)
+	token_jwt.Set( "iat", time.Now().Unix())
+	token_jwt.Set( "exp", time.Now().Unix() + 3600)
+
+	// Sign JWT with key
+	token_serialized, err := jwt.Sign(token_jwt, jwt.WithKey(jwk.Algorithm(), jwk))
+	if err != nil {
+		log.Fatalln("Failed to sign JWT: ", err)
+	}
+
+	return string(token_serialized)
+}
+
+func getAuthToken(authUrl string, clientId string, clientJwk string, aud string, scope string) (string, float64) {
+
+	jwt := getJwt(clientId, clientJwk, aud)
+
 	log.Println(getCurrentTime(), "Sending authentication request...")
 	// Send login info for authentication token
 	transCfg := &http.Transport{
@@ -281,7 +320,7 @@ func getAuthToken(authUrl string, clientId string, clientSecret string, scope st
 			},
 	}
 
-	authResp, err := client.PostForm(authUrl, url.Values{"grant_type": {"client_credentials"}, "client_id": {clientId}, "client_secret": {clientSecret}, "scope": {scope}})
+	authResp, err := client.PostForm(authUrl, url.Values{"grant_type": {"client_credentials"}, "scope": {scope}, "client_id": {clientId}, "client_assertion_type": {"urn:ietf:params:oauth:client-assertion-type:jwt-bearer"}, "client_assertion": {jwt}})
 
 	if err != nil {
 		log.Fatalln(getCurrentTime(), "Token request failed: ", err)
@@ -301,7 +340,7 @@ func getAuthToken(authUrl string, clientId string, clientSecret string, scope st
 		log.Println(getCurrentTime(), "Refinitiv Data Platform authentication HTTP code: ", authResp.StatusCode)
 		newHost := authResp.Header.Get("Location")
 		log.Println(getCurrentTime(), "Perform URL redirect to ", newHost)
-		return getAuthToken(newHost, clientId, clientSecret, scope)
+		return getAuthToken(newHost, clientId, clientJwk, aud, scope)
 	case 400, 401, 403, 404, 410, 451:
 		// Stop trying the request
 		// NOTE: With 400 and 401, there is not retry to keep this sample code simple
@@ -311,7 +350,7 @@ func getAuthToken(authUrl string, clientId string, clientSecret string, scope st
 		time.Sleep(5 * time.Second)
 		// CAUTION: This is sample code with infinite retries.
 		log.Println(getCurrentTime(), "Retrying auth request")
-		return getAuthToken(authUrl, clientId, clientSecret, scope)
+		return getAuthToken(authUrl, clientId, clientJwk, aud, scope)
 	}
 
 	var authJson interface{}
@@ -417,7 +456,7 @@ func queryServiceDiscovery(discoveryUrl string, token string, region string, hot
 			}
 		}
 	}
-	
+
 	if hotstandby {
 		if len(addresses) < 2 {
 			log.Fatalln("Expected 2 hosts but received:", len(addresses), "or the region:", region, "is not present in list of endpoints");
