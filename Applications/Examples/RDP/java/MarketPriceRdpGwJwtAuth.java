@@ -95,6 +95,7 @@ public class MarketPriceRdpGwJwtAuth {
     public static JSONObject authJson = null;
     public static JSONObject serviceJson = null;
     public static List<String> hostList = new LinkedList<String>();
+    public static List<String> backupHostList = new LinkedList<String>();
     public static WebSocketFactory websocketFactory = new WebSocketFactory();
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
@@ -227,7 +228,7 @@ public class MarketPriceRdpGwJwtAuth {
 
                                     do {
                                         try {
-                                            Thread.sleep(3000);
+                                            Thread.sleep(5000);
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
                                             System.exit(1);
@@ -480,10 +481,15 @@ public class MarketPriceRdpGwJwtAuth {
 
                     if (!hotstandby)
                     {
-                        if (endpoint.getJSONArray("location").length() == 2)
+                        if (endpoint.getJSONArray("location").length() >= 2)
                         {
                             hostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
-                            break;
+                            continue;
+                        }
+						else if (endpoint.getJSONArray("location").length() == 1)
+                        {
+                            backupHostList.add(endpoint.getString("endpoint") + ":" + endpoint.getInt("port"));
+                            continue;
                         }
                     }
                     else
@@ -502,10 +508,9 @@ public class MarketPriceRdpGwJwtAuth {
                 }
             }
 
-            //long expireTime = calcExpireTime(Integer.parseInt(authJson.getString("expires_in")));
             long expireTime = calcExpireTime(authJson.getInt("expires_in"));
 
-            if(hotstandby)
+            if (hotstandby)
             {
                 if(hostList.size() < 2)
                 {
@@ -513,14 +518,22 @@ public class MarketPriceRdpGwJwtAuth {
                     System.exit(1);
                 }
             }
-            else
-            {
-                if (hostList.size() == 0)
-                {
-                    System.out.println("Error: The region: " + region + " is not present in list of endpoints");
-                    System.exit(1);
-                }
-            }
+			else
+			{
+				if (hostList.size() == 0)
+				{
+					if (backupHostList.size() > 0)
+					{
+						hostList = backupHostList;
+					}
+				}
+			}
+
+			if (hostList.size() == 0)
+			{
+				System.out.println("Error: The region: " + region + " is not present in list of endpoints");
+				System.exit(1);
+			}
 
             // Connect WebSocket(s).
             webSocketSession1 = new WebSocketSession("session1", hostList.get(0), authJson.getString("access_token"));
@@ -533,7 +546,7 @@ public class MarketPriceRdpGwJwtAuth {
                 //   Any requested token may be used in [re]connecting to the 
                 //   server upto the expires_in time. Therefore, check if token 
                 //   is valid before using it after reconnection and get a new token ONLY as needed
-                Thread.sleep(3000);
+                Thread.sleep(5000);
                 if (expireTime < System.currentTimeMillis()
                     || webSocketSession1.needNewToken()
                     || hotstandby && webSocketSession2.needNewToken())
@@ -568,12 +581,12 @@ public class MarketPriceRdpGwJwtAuth {
     private static long calcExpireTime(int expireIn) {
         if (expireIn < 600)
         {
-            // The value 900 means 90% of expireTime in milliseconds
-            return System.currentTimeMillis() + expireIn * 900;
+            // The value 950 means 95% of expireTime in milliseconds
+            return System.currentTimeMillis() + expireIn * 950;
         }
         else
         {
-            return System.currentTimeMillis() + 300 * 1000;
+            return System.currentTimeMillis() + (expireIn - 300) * 1000;
         }
     }
 

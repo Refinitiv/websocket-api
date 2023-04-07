@@ -85,7 +85,7 @@ public class MarketPriceRdpGwClientCredAuth {
     public static JSONObject authJson = null;
     public static JSONObject serviceJson = null;
     public static List<String> hostList = new LinkedList<String>();
-	public static List<String> backupHostList = new LinkedList<String>();
+    public static List<String> backupHostList = new LinkedList<String>();
     public static WebSocketFactory websocketFactory = new WebSocketFactory();
     public static WebSocketSession webSocketSession1 = null;
     public static WebSocketSession webSocketSession2 = null;
@@ -218,7 +218,7 @@ public class MarketPriceRdpGwClientCredAuth {
 
                                     do {
                                         try {
-                                            Thread.sleep(3000);
+                                            Thread.sleep(5000);
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
                                             System.exit(1);
@@ -495,7 +495,6 @@ public class MarketPriceRdpGwClientCredAuth {
                 }
             }
 
-            //long expireTime = calcExpireTime(Integer.parseInt(authJson.getString("expires_in")));
             long expireTime = calcExpireTime(authJson.getInt("expires_in"));
 
             if (hotstandby)
@@ -534,7 +533,7 @@ public class MarketPriceRdpGwClientCredAuth {
                 //   Any requested token may be used in [re]connecting to the 
                 //   server upto the expires_in time. Therefore, check if token 
                 //   is valid before using it after reconnection and get a new token ONLY as needed
-                Thread.sleep(3000);
+                Thread.sleep(5000);
                 if (expireTime < System.currentTimeMillis()
                     || webSocketSession1.needNewToken()
                     || hotstandby && webSocketSession2.needNewToken())
@@ -569,12 +568,12 @@ public class MarketPriceRdpGwClientCredAuth {
     private static long calcExpireTime(int expireIn) {
         if (expireIn < 600)
         {
-            // The value 900 means 90% of expireTime in milliseconds
-            return System.currentTimeMillis() + expireIn * 900;
+            // The value 950 means 95% of expireTime in milliseconds
+            return System.currentTimeMillis() + expireIn * 950;
         }
         else
         {
-            return System.currentTimeMillis() + 300 * 1000;
+            return System.currentTimeMillis() + (expireIn - 300) * 1000;
         }
     }
 

@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketPriceRdpGwServiceDisc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketPriceRdpGwClientCredAuthExample", "MarketPriceRdpGwClientCredAuthExample\MarketPriceRdpGwClientCredAuthExample_NET6.0.csproj", "{62C74C09-BAFF-4EFB-BC8A-98E0DEA038CB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketPriceRdpGwJwtAuthExample", "MarketPriceRdpGwJwtAuthExample\MarketPriceRdpGwJwtAuthExample_NET6.0.csproj", "{0AAB20D9-7A38-4198-9995-8F94B452E2EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{62C74C09-BAFF-4EFB-BC8A-98E0DEA038CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62C74C09-BAFF-4EFB-BC8A-98E0DEA038CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62C74C09-BAFF-4EFB-BC8A-98E0DEA038CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AAB20D9-7A38-4198-9995-8F94B452E2EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AAB20D9-7A38-4198-9995-8F94B452E2EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AAB20D9-7A38-4198-9995-8F94B452E2EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AAB20D9-7A38-4198-9995-8F94B452E2EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

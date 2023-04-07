@@ -2,12 +2,13 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2018-2021 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2023 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -129,6 +130,19 @@ namespace MarketPriceRdpGwAuthenticationExample
             example.Run();
         }
 
+        /// <summary>
+        /// HttpClientHandler is intended to be instantiated once per application, rather than per-use. See Remarks.
+        /// </summary>
+        static readonly HttpClientHandler httpHandler = new HttpClientHandler()
+        {
+            AllowAutoRedirect = false
+        };
+
+        /// <summary>
+        /// HttpClient is intended to be instantiated once per application, rather than per-use. See Remarks.
+        /// </summary>
+        static readonly HttpClient httpClient = new HttpClient(httpHandler);
+
         /// <summary> Send an HTTP request to the specified authentication server, containing our username and password.
         /// The token will be used to login on the websocket. </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
@@ -138,7 +152,6 @@ namespace MarketPriceRdpGwAuthenticationExample
                 url = _authUrl;
 
             Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}", isRefresh, url);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
             try
             {
@@ -152,23 +165,16 @@ namespace MarketPriceRdpGwAuthenticationExample
                     postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
                 }
 
-                byte[] postContent = Encoding.ASCII.GetBytes(postString);
-                webRequest.Method = "POST";
-                webRequest.ContentType = "application/x-www-form-urlencoded";
-                webRequest.ContentLength = postContent.Length;
-                webRequest.AllowAutoRedirect = false;
+                var content = new StringContent(postString, Encoding.ASCII, "application/x-www-form-urlencoded");
+                using var response = httpClient.PostAsync(url, content).Result;
 
-                System.IO.Stream requestStream = webRequest.GetRequestStream();
-                requestStream.Write(postContent, 0, postContent.Length);
-                requestStream.Close();
-
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
+                if (response.IsSuccessStatusCode)
                 {
+                    var result = response.Content.ReadAsStringAsync().Result;
+
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
-                    dynamic msg = JsonConvert.DeserializeObject(new System.IO.StreamReader(webResponse.GetResponseStream()).ReadToEnd());
+                    dynamic msg = JsonConvert.DeserializeObject(result);
                     Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // other possible items: auth_token, refresh_token, expires_in
@@ -178,75 +184,56 @@ namespace MarketPriceRdpGwAuthenticationExample
                         _expirationInMilliSeconds *= 1000;
                     if (!isRefresh)
                         _originalExpirationInMilliSeconds = _expirationInMilliSeconds;
+                    return true;
                 }
-
-                webResponse.Close();
-                return true;
-
-            }
-            catch (WebException e)
-            {
-                HttpWebResponse response = null;
-                if (e.Status == WebExceptionStatus.ProtocolError)
+                else
                 {
-                    response = (HttpWebResponse)e.Response;
-
-                    HttpStatusCode statusCode = response.StatusCode;
-
-                    bool ret = false;
-
-                    switch (statusCode)
+                    switch (response.StatusCode)
                     {
                         case HttpStatusCode.Moved:                  // 301
                         case HttpStatusCode.Redirect:               // 302
                         case HttpStatusCode.TemporaryRedirect:      // 307
                         case HttpStatusCode.PermanentRedirect:      // 308
                             // Perform URL redirect
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
-                            string newHost = response.Headers.Get("Location");
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
+                            string newHost = response.Headers.Location.AbsoluteUri;
                             if (!string.IsNullOrEmpty(newHost))
-                                ret = GetAuthenticationInfo(isRefresh, newHost);
+                                return GetAuthenticationInfo(isRefresh, newHost);
                             break;
                         case HttpStatusCode.BadRequest:        // 400
                         case HttpStatusCode.Unauthorized:      // 401
                             // Retry with username and password
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             if (isRefresh)
                             {
                                 Console.WriteLine("Retry with username and password");
-                                ret = GetAuthenticationInfo(false);
+                                return GetAuthenticationInfo(false);
                             }
-                            else
-                                ret = false;
                             break;
                         case HttpStatusCode.Forbidden:                      // 403
                         case HttpStatusCode.NotFound:                       // 404
                         case HttpStatusCode.Gone:                           // 410
                         case HttpStatusCode.UnavailableForLegalReasons:     // 451
                             // Stop retrying with the request
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Stop retrying with the request");
-                            ret = false;
                             break;
                         default:
                             // Retry the request to the Refinitiv Data Platform 
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Retrying the request to the Refinitiv Data Platform");
                             Thread.Sleep((int)(5000));
                             // CAUTION: This is sample code with infinite retries
-                            ret = GetAuthenticationInfo(isRefresh);
-                            break;
+                            return GetAuthenticationInfo(isRefresh);
                     }
-                    response.Close();
-                    return ret;
+                    return false;
                 }
-                else
+            }
+            catch (Exception e)
+            {
                 {
                     /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
-                    if (e.InnerException != null)
-                        Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
-                    else
-                        Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                    Console.WriteLine("Authentication server request failed: {0}\n", e.Message);
                 }
             }
             return false;
@@ -704,7 +691,6 @@ namespace MarketPriceRdpGwAuthenticationExample
         public bool ChangePassword()
         {
             Console.WriteLine("Sending change password request to " + _authUrl);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(_authUrl);
 
             try
             {
@@ -713,34 +699,16 @@ namespace MarketPriceRdpGwAuthenticationExample
                 postString += "&scope=" + _scope + "&grant_type=password&password=" + Uri.EscapeDataString(_password);
                 postString += "&newPassword=" + Uri.EscapeDataString(_newPassword);
 
-                byte[] postContent = Encoding.ASCII.GetBytes(postString);
-                webRequest.Method = "POST";
-                webRequest.ContentType = "application/x-www-form-urlencoded";
-                webRequest.ContentLength = postContent.Length;
-                webRequest.AllowAutoRedirect = false;
+                var content = new StringContent(postString, Encoding.ASCII, "application/x-www-form-urlencoded");
+                using var response = httpClient.PostAsync(_authUrl, content).Result;
 
-                System.IO.Stream requestStream = webRequest.GetRequestStream();
-                requestStream.Write(postContent, 0, postContent.Length);
-                requestStream.Close();
-
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-                webResponse.Close();
-                return true;
-
-            }
-            catch (WebException e)
-            {
-                HttpWebResponse response = null;
-                if (e.Status == WebExceptionStatus.ProtocolError)
+                if (response.IsSuccessStatusCode)
                 {
-                    response = (HttpWebResponse)e.Response;
-
-                    HttpStatusCode statusCode = response.StatusCode;
-
-                    bool ret = false;
-
-                    switch (statusCode)
+                    return true;
+                }
+                else
+                {
+                    switch (response.StatusCode)
                     {
                         case HttpStatusCode.Moved:                      // 301
                         case HttpStatusCode.Redirect:                   // 302
@@ -748,9 +716,9 @@ namespace MarketPriceRdpGwAuthenticationExample
                         case HttpStatusCode.PermanentRedirect:          // 308
                             // Perform URL redirect
                             Console.WriteLine("Request to aurh server is redirected");
-                            string newHost = response.Headers.Get("Location");
+                            string newHost = response.Headers.Location.AbsoluteUri;
                             if (!string.IsNullOrEmpty(newHost))
-                                ret = ChangePassword();
+                                return ChangePassword();
                             break;
                         case HttpStatusCode.BadRequest:                  // 400
                         case HttpStatusCode.Unauthorized:                // 401
@@ -758,33 +726,30 @@ namespace MarketPriceRdpGwAuthenticationExample
                         case HttpStatusCode.UnavailableForLegalReasons:  // 451
                             // Error of changing password
                             Console.WriteLine("Change password error");
-                            if (response.ContentLength > 0)
+                            var result = response.Content.ReadAsStringAsync().Result;
+                            if (!string.IsNullOrEmpty(result))
                             {
                                 /* If there is content in the response, print it. */
-                                dynamic msg = JsonConvert.DeserializeObject(new System.IO.StreamReader(response.GetResponseStream()).ReadToEnd());
+                                dynamic msg = JsonConvert.DeserializeObject(result);
                                 Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(msg, Formatting.Indented));
                             }
-                            ret = false;
                             break;
                         default:
                             // Retry the request to the API gateway
-                            Console.WriteLine("Error changing password. Receive HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Error changing password. Receive HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Retrying the request to the API gateway");
                             Thread.Sleep((int)(5000));
                             // CAUTION: This is sample code with infinite retries
-                            ret = ChangePassword();
-                            break;
+                            return ChangePassword();
                     }
-                    response.Close();
-                    return ret;
+                    return false;
                 }
-                else
+            }
+            catch (Exception e)
+            {
                 {
                     /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
-                    if (e.InnerException != null)
-                        Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
-                    else
-                        Console.WriteLine("Authentication server request failed: {0}", e.Message);
+                    Console.WriteLine("Authentication server request failed: {0}\n", e.Message);
                 }
             }
             return false;

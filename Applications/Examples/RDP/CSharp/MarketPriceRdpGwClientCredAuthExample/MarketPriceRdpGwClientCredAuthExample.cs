@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license      --
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 //|                See the project's LICENSE.md for details.                  --
-//|            Copyright (C) 2018-2020 Refinitiv. All rights reserved.        --
+//|            Copyright (C) 2018-2023 Refinitiv. All rights reserved.        --
 //|-----------------------------------------------------------------------------
 
 using System;
@@ -11,13 +11,14 @@ using System.IO;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-using System.Security.Cryptography.X509Certificates;
+using System.Net.Http;
+using System.Net.Http.Headers;
+
 /*
  * This example demonstrates authenticating via Refinitiv Data Platform (RDP), using an
  * authentication token to discover Refinitiv Real-Time service endpoint or use specified
@@ -51,8 +52,6 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace MarketPriceRdpGwClientCredAuthExample
 {
-
-
     class MarketPriceRdpGwClientCredAuthExample
     {
         /// <summary>The websocket(s) used for retrieving market content.</summary>
@@ -106,10 +105,7 @@ namespace MarketPriceRdpGwClientCredAuthExample
         private static double _tokenTS = 0.0;
 
         /// <summary>Amount of time until the authentication token expires; re-authenticate before then</summary>
-        private static int _expiration_in_ms = Timeout.Infinite;
-
-        /// <summary>Expiration time returned by login (on refresh) request</summary>
-        private int _original_expiration_in_ms = Timeout.Infinite;
+        private static double _expiration = 0.0;
 
         /// <summary>indicates whether application should support hotstandby</summary>
         private static bool _hotstandby = false;
@@ -192,8 +188,8 @@ namespace MarketPriceRdpGwClientCredAuthExample
                 Console.WriteLine("The WebSocket connection is closed for " + Name);
                 if (!Canceling)
                 {
-                    Console.WriteLine("Reconnect to the endpoint for " + Name + " after 3 seconds...");
-                    Thread.Sleep(3000);
+                    Console.WriteLine("Reconnect to the endpoint for " + Name + " after 5 seconds...");
+                    Thread.Sleep(5000);
                     WebSocket.Dispose();
                     Connect();
                     Reconnecting = false;
@@ -337,6 +333,19 @@ namespace MarketPriceRdpGwClientCredAuthExample
             example.Run();
         }
 
+        /// <summary>
+        /// HttpClientHandler is intended to be instantiated once per application, rather than per-use. See Remarks.
+        /// </summary>
+        static readonly HttpClientHandler httpHandler = new HttpClientHandler()
+        {
+            AllowAutoRedirect = false
+        };
+
+        /// <summary>
+        /// HttpClient is intended to be instantiated once per application, rather than per-use. See Remarks.
+        /// </summary>
+        static readonly HttpClient httpClient = new HttpClient(httpHandler);
+
         /// <summary> Send an HTTP request to the specified authentication server, containing our clientId and clientSecret.
         /// The token will be used to login on the websocket. </summary>
         /// <returns><c>true</c> if success otherwise <c>false</c></returns>
@@ -346,68 +355,51 @@ namespace MarketPriceRdpGwClientCredAuthExample
                 url = _authUrl;
 
             Console.WriteLine("{0} Sending authentication request to {1}", DateTime.Now.ToString(), url);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
             try
             {
                 /* Create string for the request. */
-                string postString = "grant_type=client_credentials"; 
+                string postString = "grant_type=client_credentials";
                 postString += "&client_id=" + _clientId;
                 postString += "&client_secret=" + _clientSecret;
                 postString += "&scope=" + _scope;
 
-                byte[] postContent = Encoding.ASCII.GetBytes(postString);
-                webRequest.Method = "POST";
-                webRequest.ContentType = "application/x-www-form-urlencoded";
-                webRequest.ContentLength = postContent.Length;
-                webRequest.AllowAutoRedirect = false;
+                var content = new StringContent(postString, Encoding.ASCII, "application/x-www-form-urlencoded");
+                using var response = httpClient.PostAsync(url, content).Result;
 
-                System.IO.Stream requestStream = webRequest.GetRequestStream();
-                requestStream.Write(postContent, 0, postContent.Length);
-                requestStream.Close();
-
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
+                if (response.IsSuccessStatusCode)
                 {
+                    var result = response.Content.ReadAsStringAsync().Result;
+
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
-                    dynamic msg = JsonConvert.DeserializeObject(new System.IO.StreamReader(webResponse.GetResponseStream()).ReadToEnd());
+                    dynamic msg = JsonConvert.DeserializeObject(result);
                     Console.WriteLine("{0} RECEIVED:\n{1}\n", DateTime.Now.ToString(), JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // other possible items: auth_token, refresh_token, expires_in
                     _authToken = msg["access_token"].ToString();
-                    if (Int32.TryParse(msg["expires_in"].ToString(), out _expiration_in_ms))
-                        _expiration_in_ms *= 1000;
-						_original_expiration_in_ms = _expiration_in_ms;
+                    if (Double.TryParse(msg["expires_in"].ToString(), out _expiration))
+                        return true;
+                    else
+                        return false;
                 }
-
-                webResponse.Close();
-                return true;
-
-            }
-            catch (WebException e)
-            {
-                HttpWebResponse response = null;
-                if (e.Status == WebExceptionStatus.ProtocolError)
+                else
                 {
-                    response = (HttpWebResponse)e.Response;
-
-                    HttpStatusCode statusCode = response.StatusCode;
-
-                    bool ret = false;
-
-                    switch (statusCode)
+                    switch (response.StatusCode)
                     {
                         case HttpStatusCode.Moved:                         // 301
                         case HttpStatusCode.Redirect:                      // 302
                         case HttpStatusCode.TemporaryRedirect:             // 307
                         case HttpStatusCode.PermanentRedirect:             // 308
                             // Perform URL redirect
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
-                            string newHost = response.Headers.Get("Location");
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
+
+                            string newHost = response.Headers.Location.AbsoluteUri;
                             if (!string.IsNullOrEmpty(newHost))
-                                ret = GetAuthenticationInfo(newHost);
+                            {
+                                Console.WriteLine("Perform URL redirect to {0}", newHost);
+                                return GetAuthenticationInfo(newHost);
+                            }
                             break;
                         case HttpStatusCode.BadRequest:                     // 400
                         case HttpStatusCode.Unauthorized:                   // 401
@@ -415,30 +407,24 @@ namespace MarketPriceRdpGwClientCredAuthExample
                         case HttpStatusCode.NotFound:                       // 404
                         case HttpStatusCode.Gone:                           // 410
                         case HttpStatusCode.UnavailableForLegalReasons:     // 451
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Unrecoverable error: stopped retrying request");
                             break;
                         default:
-                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform authentication HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Retrying auth request");
                             Thread.Sleep((int)(5000));
                             // CAUTION: This is sample code with infinite retries
-                            ret = GetAuthenticationInfo();
-                            break;
+                            return GetAuthenticationInfo();
                     }
-
-                    response.Close();
-                    return ret;
-                }
-                else
-                {
-                    /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
-                    if (e.InnerException != null)
-                        Console.WriteLine("Authentication server request failed: {0} -- {1}\n", e.Message, e.InnerException.Message);
-                    else
-                        Console.WriteLine("Authentication server request failed: {0}", e.Message);
                 }
             }
+            catch (Exception e)
+            {
+                /* The request to the authentication server failed, e.g. due to connection failure or HTTP error response. */
+                Console.WriteLine("Authentication server request failed: {0}\n", e.Message);
+            }
+
             return false;
         }
 
@@ -455,25 +441,24 @@ namespace MarketPriceRdpGwClientCredAuthExample
             if(string.IsNullOrEmpty(url))
               url = _discoveryUrl;
 
-            string param_url = url + "?transport=websocket";
-
-            Console.WriteLine("{0} Sending service discovery request to {1}\n", DateTime.Now.ToString(), param_url);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(param_url);
-            webRequest.Headers.Add("Authorization", "Bearer " + _authToken);
-
-            webRequest.UserAgent = "CSharpMarketPriceRdpGwClientCredAuthExample";
-            webRequest.AllowAutoRedirect = false;
+            Console.WriteLine("{0} Sending service discovery request to {1}\n", DateTime.Now.ToString(), url);
 
             try
             {
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+                var headers = httpClient.DefaultRequestHeaders;
+                headers.UserAgent.TryParseAdd("CSharpMarketPriceRdpGwClientCredAuthExample");
+                headers.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
 
-                if (webResponse.GetResponseHeader("Transfer-Encoding").Equals("chunked") || webResponse.ContentLength > 0)
+                using var response = httpClient.GetAsync(url + "?transport=websocket").Result;
+
+                if (response.IsSuccessStatusCode)
                 {
+                    var result = response.Content.ReadAsStringAsync().Result;
+
                     /* If there is content in the response, print it. */
                     /* Format the object string for easier reading. */
-                    dynamic msg = JsonConvert.DeserializeObject(new System.IO.StreamReader(webResponse.GetResponseStream()).ReadToEnd());
-                    Console.WriteLine("{0} RECEIVED:\n{1}", DateTime.Now.ToString(), JsonConvert.SerializeObject(msg, Formatting.Indented));
+                    dynamic msg = JsonConvert.DeserializeObject(result);
+                    Console.WriteLine("{0} RECEIVED:\n{1}\n", DateTime.Now.ToString(), JsonConvert.SerializeObject(msg, Formatting.Indented));
 
                     // extract endpoints
                     Newtonsoft.Json.Linq.JArray endpoints = msg["services"];
@@ -497,12 +482,17 @@ namespace MarketPriceRdpGwClientCredAuthExample
 
                         if (_hotstandby && locations.Count == 1 && _hostName == null && _hostName2 == null)
                         {
-                            _hosts.Add(new Tuple<string,string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(), (endpoints[i]["port"]).ToString()));
                             continue;
                         }
                         if (!_hotstandby && locations.Count >= 2 && _hostName == null)
                         {
-                            _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(),(endpoints[i]["port"]).ToString()));
+                            _hosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(), (endpoints[i]["port"]).ToString()));
+                            continue;
+                        }
+                        else if (!_hotstandby && locations.Count == 1 && _hostName == null)
+                        {
+                            _backupHosts.Add(new Tuple<string, string>((endpoints[i]["endpoint"]).ToString(), (endpoints[i]["port"]).ToString()));
                             continue;
                         }
                         else if (!_hotstandby && locations.Count == 1 && _hostName == null)
@@ -514,7 +504,7 @@ namespace MarketPriceRdpGwClientCredAuthExample
 
                     if (_hotstandby)
                     {
-                        if(_hosts.Count < 2)
+                        if (_hosts.Count < 2)
                         {
                             Console.WriteLine("hotstandby support requires at least two hosts");
                             System.Environment.Exit(1);
@@ -534,70 +524,50 @@ namespace MarketPriceRdpGwClientCredAuthExample
                     if (_hosts.Count == 0)
                     {
                         Console.WriteLine("No host found from Refinitiv Data Platform service discovery");
-                        System.Environment.Exit(1);
+                        return false;
                     }
+                    return true;
                 }
-                return true;
-            }
-            catch (WebException e)
-            {
-
-                HttpWebResponse response = null;
-                if (e.Status == WebExceptionStatus.ProtocolError)
+                else
                 {
-                    response = (HttpWebResponse)e.Response;
-
-                    HttpStatusCode statusCode = response.StatusCode;
-
-                    bool ret = false;
-
-                    switch (statusCode)
+                    switch (response.StatusCode)
                     {
                         case HttpStatusCode.Moved:                  // 301
                         case HttpStatusCode.Redirect:               // 302
                         case HttpStatusCode.TemporaryRedirect:      // 307
                         case HttpStatusCode.PermanentRedirect:      // 308
                             // Perform URL redirect
-                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", statusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
 
-                            string newHost = response.Headers.Get("Location");
+                            string newHost = response.Headers.Location.AbsoluteUri;
                             if (!string.IsNullOrEmpty(newHost))
                             {
                                 Console.WriteLine("Perform URL redirect to {0}", newHost);
-                                ret = DiscoverServices(newHost);
+                                return DiscoverServices(newHost);
                             }
-                            else
-                                ret = false;
                             break;
                         case HttpStatusCode.Forbidden:                      // 403
                         case HttpStatusCode.NotFound:                       // 404
                         case HttpStatusCode.Gone:                           // 410
                         case HttpStatusCode.UnavailableForLegalReasons:     // 451
-                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", response.StatusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Unrecoverable error: stopped retrying request");
                             break;
                         default:
-                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", response.StatusCode, response.StatusDescription);
+                            Console.WriteLine("Refinitiv Data Platform service discovery HTTP code: {0} {1}\n", response.StatusCode, response.ReasonPhrase);
                             Console.WriteLine("Retrying service discovery request");
                             Thread.Sleep((int)(5000));
                             // CAUTION: This is sample code with infinite retries
-                            ret = DiscoverServices();
-                            break;
+                            return DiscoverServices();
                     }
-
-                    response.Close();
-                    return ret;
-                }
-                else
-                {
-                    // service discovery failed
-                    if (e.InnerException != null)
-                        Console.WriteLine("Service discovery request failed: {0} -- {1}\n", e.Message.ToString(), e.InnerException.Message.ToString());
-                    else
-                        Console.WriteLine("Service discovery request failed: {0}", e.Message.ToString());
-                    Environment.Exit(1);
                 }
             }
+            catch (Exception e)
+            {
+                /* The request to the service discovery server failed, e.g. due to connection failure or HTTP error response. */
+                Console.WriteLine("Service discovery request failed: {0}\n", e.Message);
+            }
+
             return false;
         }
 
@@ -614,7 +584,7 @@ namespace MarketPriceRdpGwClientCredAuthExample
             if (!GetAuthenticationInfo() || !DiscoverServices())
                 Environment.Exit(1);
 
-            _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalMilliseconds;
+            _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
 
             if (_hostName != null)
             {
@@ -655,7 +625,7 @@ namespace MarketPriceRdpGwClientCredAuthExample
                 // after 95% of the time allowed before the token expires, retrive a new set of tokens and send a login to each open websocket
                 while (true)
                 {
-                    Thread.Sleep((int)(3000)); // in ms
+                    Thread.Sleep((int)(5000)); // in ms
 
                     if (_webSocketSessions.ContainsKey("Session1"))
                     {
@@ -670,40 +640,31 @@ namespace MarketPriceRdpGwClientCredAuthExample
                     {
                         if ((session1 != null && !session1.Reconnecting) || (session2 != null && !session2.Reconnecting))
                         {
-                            curTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalMilliseconds;
+                            curTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
 
-                            if ((_expiration_in_ms / 1000) < 600)
+                            if (_expiration < 600)
                             {
-                                deltaTime = _expiration_in_ms * 0.95;
+                                deltaTime = _expiration * 0.95;
                             }
                             else
                             {
-                                deltaTime = 300 * 1000;
+                                deltaTime = _expiration - 300;
                             }
 
-                            if (Convert.ToInt64(curTS - deltaTime) >= Convert.ToInt64(_tokenTS))
+                            if ((curTS - deltaTime) >= _tokenTS)
                             {
                                 if (!GetAuthenticationInfo())
                                     Console_CancelKeyPress(null, null);
 
-                                _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalMilliseconds;
-
-                                if (_expiration_in_ms != _original_expiration_in_ms)
-                                {
-                                    System.Console.WriteLine("expire time changed from " + _original_expiration_in_ms / 1000
-                                        + " sec to " + _expiration_in_ms / 1000 + " sec; retry login");
-                                    if (!GetAuthenticationInfo())
-                                        Console_CancelKeyPress(null, null);
-                                }
+                                _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
                             }
-
                         }
                         else
                         {
                             if (!GetAuthenticationInfo())
                                 Console_CancelKeyPress(null, null);
 
-                            _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalMilliseconds;
+                            _tokenTS = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
                         }
                         if (!session1.Canceling)
                         {

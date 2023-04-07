@@ -219,12 +219,12 @@ func main() {
 			return
 		case <-connect:
 			// Waiting a few seconds before attempting to reconnect
-			time.Sleep(4 * time.Second)
+			time.Sleep(5 * time.Second)
 			var deltaTime float64
 			if expired < 600 {
-				deltaTime = expired * 0.90
+				deltaTime = expired * 0.95
 			} else {
-				deltaTime = 300
+				deltaTime = expired - 300
 			}
 			if time.Now().Sub(tokenTS).Seconds() >= deltaTime {
 				token, expired = getAuthToken(*authUrl, *clientId, *clientSecret, *scope)
@@ -233,7 +233,7 @@ func main() {
 			newToken <- token
 		case <-reconnect:
 			// Waiting a few seconds before attempting to reconnect
-			time.Sleep(4 * time.Second)
+			time.Sleep(5 * time.Second)
 			token, expired = getAuthToken(*authUrl, *clientId, *clientSecret, *scope)
 			tokenTS = time.Now()
 			newToken <- token

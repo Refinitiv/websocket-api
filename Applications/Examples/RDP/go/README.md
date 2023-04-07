@@ -1,4 +1,4 @@
-# C# Refinitiv Data Platfrom Examples
+# Golang Refinitiv Data Platfrom Examples
 
 Example Code Disclaimer:
 ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. REFINITIV MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF EXAMPLE CODE, OR THE INFORMATION, CONTENT OR MATERIALS USED IN CONNECTION WITH EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF EXAMPLE CODE IS AT YOUR SOLE RISK
@@ -14,7 +14,7 @@ The purpose of these examples is to connect to Refinitiv Real-Time - Optimized (
 retrieve JSON-formatted market content over a Websocket connection from a 
 Refinitiv Real-Time Service after authenticating via Refinitiv Data Platform (RDP). 
 
-Explanation of Example:
+Explanation of the Examples:
 
 * __market_price_rdpgw_client_cred_auth__: Retrieves market-price content for a RIC after
   authenticating with RDP (auth/oauth2/v2/token). The obtained access token is used in inital 
@@ -27,9 +27,20 @@ Explanation of Example:
   with Refintiv provided Service Account credentials: clientid (username) and 
   clientsecret (password). 
 
-This application is intended as sample code. Some of the design choices
-were made to favor simplicity and readability over performance. This application
-is not intended to be used for measuring performance.
+* __market_price_rdpgw_jwt_auth__: Retrieves market-price content for a RIC after
+  authenticating with RDP (auth/oauth2/v2/token). The obtained access token is used in inital 
+  authentication with Refintiv Real-Time - Optimized (RTO). New tokens are obtained if 
+  reconnecting to Refinitiv Real-Time Server. During reconnection attempts, a new token 
+  is obtained only if existing token has expired. This example connects to a specified 
+  endpoint (host and port) or if unspecified will discover the endpoint information 
+  using a service discovery URL using a region supplied as input. The Authentication 
+  is 'oAuthJwt' or RDP version2 (v2) auth which uses client credentials grant
+  with Refintiv provided Service Account credentials: clientid (username) and 
+  JWT (JSON Web Token). 
+
+These applications are intended as sample code. Some of the design choices
+were made to favor simplicity and readability over performance. These applications
+are not intended to be used for measuring performance.
 
 
 ## Setup 
@@ -38,9 +49,12 @@ is not intended to be used for measuring performance.
     - Go to: <https://golang.org/dl/>
     - Follow installation instructions for your machine
     - Test installation as instructed on website
-2. __Install libraries__
+2. __Create new go.mod module market\_price\_rdpgw\_examples__
     - Run:
-      - `go get github.com/gorilla/websocket`
+      - `go mod init market_price_rdpgw_examples`
+3. __Install libraries__
+    - Run:
+      - `go mod tidy`
 
 ### RedHat/Oracle Linux
 1. __Install Go via Yum__
@@ -51,11 +65,14 @@ is not intended to be used for measuring performance.
             `rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm`
 	  - (Oracle 6, Oracle 7) Download the appropriate repository file for the system and enable the latest/addons repositories, as described here: <https://docs.oracle.com/cd/E37670_01/E37355/html/ol_downloading_yum_repo.html>
       
-2. __Install libraries__
+2. __Create new go.mod module market\_price\_rdpgw\_examples__
     - Run:
-      - `go get github.com/gorilla/websocket`
+      - `go mod init market_price_rdpgw_examples`
+3. __Install libraries__
+    - Run:
+      - `go mod tidy`
 
-## Running the Example
+## Running the Examples
 
 ### Running the market_price_rdpgw_client_cred_auth Example
 
@@ -87,3 +104,35 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 #### Source File Description
 
 * `market_price_rdpgw_client_cred_auth.go` - Source file for the market_price_rdpgw_client_cred_auth example.
+
+### Running the market_price_jwt_auth Example
+
+  - Run: `go run market_price_jwt_auth.go --clientid <clientid> --jwkFile <JWK file> --hostname <hostname>`
+  - Pressing the CTRL+C buttons terminates the example.
+
+The command line options are:
+
+Option              |Description|
+-------------------:|-----------|
+`--clientid`        | REQUIRED. Service Account ClientID to use when authenticating to Refinitiv Data Platform.
+`--jwkFile`         | REQUIRED. Service Account JWK file to sign JWT when authenticating to Refinitiv Data Platform.
+`--aud`             | OPTIONAL. JWT Audience to use when authenticating to Refinitiv Data Platform. Defaults to https://login.ciam.refinitiv.com/as/token.oauth2.
+`--app_id`          | OPTIONAL. Application ID to use when logging in. Defaults to 256.
+`--auth_url`        | OPTIONAL. V2 URL for authentication via Refinitiv Data Platform. Defaults to https://api.refinitiv.com:443/auth/oauth2/v2/token.
+`--discovery_url`   | OPTIONAL. URL of Service Discovery via Refinitiv Data Platform. Defaults to https://api.refinitiv.com/streaming/pricing/v1/.
+`--hostname`        | OPTIONAL. Hostname of the Refinitiv Real-Time Service. If unspecified, service discovery will be used.
+`--standbyhostname` | OPTIONAL. Hostname of secondary endpoint in RTO to use for Hot StandBy feature.
+`--hotstandby`      | OPTIONAL. Indicates whether or not the example operates in hot standby mode. Defaults to false.
+`--port`            | OPTIONAL. Port of the Refinitiv Real-Time Service. Defaults to 443.
+`--standbyport`     | OPTIONAL. Port of the secondary endpoint in RTO to use for Hot StandBy feature. Defaults to 443.
+`--position`        | OPTIONAL. Position to use when logging in. If not specified, the current host is used.
+`--region`          | OPTIONAL. Specifies a region to get endpoint(s) from the service discovery. Default is "us-east-1". See RTO documentation for all valid regions.
+`--ric`             | OPTIONAL. Symbol used in price server request. Defaults to /TRI.N.
+`--scope`           | OPTIONAL. Identifier for a resource name. Defaults to trapi.streaming.pricing.read.
+`--service`         | OPTIONAL. The requested service name or service ID. Defaults to ELEKTRON_DD.
+
+NOTE about hotstandby: Specifies the hotstandby mechanism to create two connections and subscribe identical items for service resiliency.
+
+#### Source File Description
+
+* `market_price_rdpgw_jwt_auth.go` - Source file for the market_price_rdpgw_jwt_auth example.

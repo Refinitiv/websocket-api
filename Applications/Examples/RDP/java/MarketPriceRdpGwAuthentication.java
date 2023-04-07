@@ -214,8 +214,8 @@ public class MarketPriceRdpGwAuthentication {
             ws = connect();
 
             while(true) {
-                // Continue using current token until 90% of initial time before it expires.
-                Thread.sleep(expireTime * 900);  // The value 900 means 90% of expireTime in milliseconds
+                // Continue using current token until 95% of initial time before it expires.
+                Thread.sleep(expireTime * 950);  // The value 950 means 95% of expireTime in milliseconds
 
                 // Connect to Refinitiv Data Platform and re-authenticate, using the refresh token provided in the previous response
                 authJson = getAuthenticationInfo(authJson);
