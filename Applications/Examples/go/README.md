@@ -43,10 +43,13 @@ Pressing the CTRL+C buttons terminates any example.
     - Go to: <https://golang.org/dl/>
     - Follow installation instructions for your machine
     - Test installation as instructed on website
-2. __Install libraries__
+2. __Create new go.mod module market\_price\_examples__
     - Run:
-      - `go get github.com/gorilla/websocket`
-3. __Run examples__
+      - `go mod init market_price_examples`
+3. __Install libraries__
+    - Run:
+      - `go mod tidy`
+4. __Run examples__
     - `cd` to `streamingtools/Applications/Examples/go`
     - To run `market_price.go` with options:
       - `go run market_price.go --hostname <hostname>`
@@ -60,10 +63,13 @@ Pressing the CTRL+C buttons terminates any example.
             `rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm`
 		  - (Oracle 6, Oracle 7) Download the appropriate repository file for the system and enable the latest/addons repositories, as described here: <https://docs.oracle.com/cd/E37670_01/E37355/html/ol_downloading_yum_repo.html>
       
-2. __Install libraries__
+2. __Create new go.mod module market\_price\_examples__
     - Run:
-      - `go get github.com/gorilla/websocket`
-3. __Run examples__
+      - `go mod init market_price_examples`
+3. __Install libraries__
+    - Run:
+      - `go mod tidy`
+4. __Run examples__
     - `cd` to `streamingtools/Applications/Examples/go`
     - To run `market_price.go` with options:
       - `go run market_price.go --hostname <hostname>`
