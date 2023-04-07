@@ -3,7 +3,7 @@
 # |            This source code is provided under the Apache 2.0 license      --
 # |  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
 # |                See the project's LICENSE.md for details.                  --
-# |            Copyright (C) 2018-2022 Refinitiv. All rights reserved.        --
+# |            Copyright (C) 2023 Refinitiv. All rights reserved.        --
 # |-----------------------------------------------------------------------------
 
 """
@@ -74,9 +74,9 @@ class WebSocketSession:
     web_socket_app = None
     web_socket_open = False
     host = ''
-    disconnected_by_user = False
-    connecting = False
+    force_disconnected = False
     reconnecting = True
+    wst = None 
 
     def __init__(self, name, host):
         self.session_name = name
@@ -124,9 +124,14 @@ class WebSocketSession:
 
     def _process_login_response(self, message_json):
         """ Send item request upon login success """
-        if message_json['State']['Stream'] != "Open" or message_json['State']['Data'] != "Ok":
-            print("Login failed.")
-            sys.exit(1)
+        if message_json['Type'] == "Status" and message_json['Domain'] == "Login" and \
+                (message_json['State']['Stream'] != "Open" or message_json['State']['Data'] != "Ok"):
+            print((str(datetime.now()) + " Error: Login failed, received status message, closing: StreamState={}, DataState={}" \
+                .format(message_json['State']['Stream'],message_json['State']['Data'])))
+            if self.web_socket_open:
+                self.web_socket_app.close()
+            self.force_disconnected = True
+            return
 
         self._send_market_price_request(ric)
 
@@ -134,16 +139,16 @@ class WebSocketSession:
         """ Parse at high level and output JSON of message """
         message_type = message_json['Type']
 
-        if message_type == "Refresh":
-            if 'Domain' in message_json:
-                message_domain = message_json['Domain']
-                if message_domain == "Login":
-                    self._process_login_response(message_json)
-        elif message_type == "Ping":
+        if message_type == "Ping":
             pong_json = {'Type': 'Pong'}
             self.web_socket_app.send(json.dumps(pong_json))
             print(str(datetime.now()) + " SENT on " + self.session_name + ":")
             print(json.dumps(pong_json, sort_keys=True, indent=2, separators=(',', ':')))
+        else:
+           if 'Domain' in message_json:
+               message_domain = message_json['Domain']
+               if message_domain == "Login":
+                   self._process_login_response(message_json)
 
     # Callback events from WebSocketApp
     def _on_message(self, ws, message):
@@ -157,47 +162,48 @@ class WebSocketSession:
 
     def _on_error(self, ws, error):
         """ Called when websocket error has occurred """
-        print(str(datetime.now()) + " Session: " + str(self.session_name) + ";  Error: "+ str(error))
-        self.web_socket_open = False
-        self.connecting = False
+        print(str(datetime.now()) + " " + str(self.session_name) + ": Error: "+ str(error))
 
     def _on_close(self, ws, close_status_code, close_message):
         """ Called when websocket is closed """
         self.web_socket_open = False
-        print(str(datetime.now()) + " WebSocket Closed for " + self.session_name)
+        print(str(datetime.now()) + " " + str(self.session_name) + ": WebSocket Closed\n")
 
     def _on_open(self, ws):
         """ Called when handshake is complete and websocket is open, send login """
 
-        print(str(datetime.now()) + " WebSocket successfully connected for " + self.session_name + "!")
+        print(str(datetime.now()) + " " + str(self.session_name) + ": WebSocket successfully connected!")
         self.web_socket_open = True
         self.reconnecting = False
-        self.connecting = False
         self._send_login_request(auth_token)
 
     # Operations
     def connect(self):
-        self.connecting = True
         # Start websocket handshake
         ws_address = "wss://{}/WebSocket".format(self.host)
-        print(str(datetime.now()) + " Connecting to WebSocket " + ws_address + " for " + self.session_name + "...")
         #websocket.enableTrace(True)
-        self.web_socket_app = websocket.WebSocketApp(ws_address, 
+        if (not self.web_socket_app) or self.reconnecting:
+            self.web_socket_app = websocket.WebSocketApp(ws_address, 
                                                      on_message=self._on_message,
                                                      on_error=self._on_error,
                                                      on_close=self._on_close,
                                                      on_open=self._on_open,
                                                      subprotocols=['tr_json2'])
         # Event loop
-        wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
-        wst.daemon = True
-        wst.start()
+        if not self.wst:
+            print(str(datetime.now()) + " " + self.session_name + ": Connecting WebSocket to " + ws_address + "...")
+            self.wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
+            self.wst.daemon = True
+            self.wst.start()
+        elif self.reconnecting and not self.force_disconnected:
+            print(str(datetime.now()) + " " + self.session_name + ": Reconnecting WebSocket to " + ws_address + "...")
+            self.web_socket_app.run_forever()
 
 
     def disconnect(self):
-        print(str(datetime.now()) + " Closing the WebSocket connection for " + self.session_name)
-        self.disconnected_by_user = True
+        self.force_disconnected = True
         if self.web_socket_open:
+            print(str(datetime.now()) + " " + self.session_name + ": Closing WebSocket\n")
             self.web_socket_app.close()
 
 
@@ -228,10 +234,14 @@ def query_service_discovery(url=None):
                 continue
 
             if not hotstandby:
-                if len(response_json['services'][index]['location']) == 2:
+                if len(response_json['services'][index]['location']) >= 2:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
                                     str(response_json['services'][index]['port']))
-                    break
+                    continue
+                if len(response_json['services'][index]['location']) == 1:
+                    backupHostList.append(response_json['services'][index]['endpoint'] + ":" +
+                                    str(response_json['services'][index]['port']))
+                    continue
             else:
                 if len(response_json['services'][index]['location']) == 1:
                     hostList.append(response_json['services'][index]['endpoint'] + ":" +
@@ -243,8 +253,12 @@ def query_service_discovery(url=None):
                 sys.exit(1)
         else:
             if len(hostList) == 0:
-                print("The region:", region, "is not present in list of endpoints")
-                sys.exit(1)
+                if len(backupHostList) > 0:
+                    for hostIndex in range(len(backupHostList)):
+                        hostList.append(backupHostList[hostIndex])
+                else:
+                    print("The region:", region, "is not present in list of endpoints")
+                    sys.exit(1)
 
         return True
 
@@ -451,11 +465,11 @@ if __name__ == "__main__":
             sys.exit(1)
 
     # Start websocket handshake; create two sessions when the hotstandby parameter is specified.
-    session1 = WebSocketSession("session1", hostList[0])
+    session1 = WebSocketSession("Session1", hostList[0])
     session1.connect()
 
     if hotstandby and len(hostList) > 1:
-        session2 = WebSocketSession("session2", hostList[1])
+        session2 = WebSocketSession("Session2", hostList[1])
         session2.connect()
 
     try:
@@ -467,26 +481,30 @@ if __name__ == "__main__":
             #   a new token must be obtained proactively. 
 
             # Waiting a few seconds before checking for connection down and attempting reconnect
-            time.sleep(4)
+            time.sleep(5)
             if not session1.web_socket_open or ( session2 and not session2.web_socket_open ) :
                 if session1.reconnecting or ( session2 and session2.reconnecting ) :
                     curTS = time.time()
                     if (int(expire_time) < 600):
-                        deltaTime = float(expire_time) * 0.90
+                        deltaTime = float(expire_time) * 0.05
                     else:
                         deltaTime = 300
-                    if (int(curTS) >= int(float(tokenTS) + float(deltaTime))):
+                    if (int(curTS) >= int(float(tokenTS) + float(expire_time) - float(deltaTime))):
                         auth_token, expire_time = get_auth_token() 
                         tokenTS = time.time()
                 else:
                     auth_token, expire_time = get_auth_token() 
                     tokenTS = time.time()
+
+                if not session1.web_socket_open and not session1.force_disconnected:
+                    session1.reconnecting = True
+                if ( session2 and not session2.web_socket_open ) and not session2.force_disconnected:
+                    session2.reconnecting = True
+
                 if auth_token is not None:
-                    if not session1.web_socket_open and not session1.disconnected_by_user and not session1.connecting:
-                        session1.reconnecting = True
+                    if (not session1.force_disconnected) and session1.reconnecting:
                         session1.connect()
-                    if session2 and not session2.web_socket_open and not session2.disconnected_by_user and not session2.connecting:
-                        session2.reconnecting = True
+                    if session2 and (not session2.force_disconnected) and session2.reconnecting:
                         session2.connect()
                 else:
                     print("Failed authentication with Refinitiv Data Platform. Exiting...")

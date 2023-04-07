@@ -63,7 +63,6 @@ region = 'us-east-1'
 ric = '/TRI.N'
 service = 'ELEKTRON_DD'
 hostList = []
-backupHostList = []
 hotstandby = False
 # Global Variables
 session2 = None
@@ -92,7 +91,7 @@ class WebSocketSession:
     web_socket_app = None
     web_socket_open = False
     host = ''
-    disconnected_by_user = False
+    disconnected = False
 
     def __init__(self, name, host):
         self.session_name = name
@@ -185,7 +184,7 @@ class WebSocketSession:
         self.logged_in = False
         print("WebSocket Closed for " + self.session_name)
 
-        if not self.disconnected_by_user:
+        if not self.disconnected:
             print("Reconnect to the endpoint for " + self.session_name + " after 3 seconds... ")
             time.sleep(3)
             self.connect()
@@ -215,7 +214,7 @@ class WebSocketSession:
 
     def disconnect(self):
         print("Closing the WebSocket connection for " + self.session_name)
-        self.disconnected_by_user = True
+        self.disconnected = True
         if self.web_socket_open:
             self.web_socket_app.close()
 
@@ -272,10 +271,9 @@ def query_service_discovery(url=None):
                 if len(backupHostList) > 0:
                     for hostIndex in range(len(backupHostList)):
                         hostList.append(backupHostList[hostIndex])
-
-        if len(hostList) == 0:
-            print("The region:", region, "is not present in list of endpoints")
-            sys.exit(1)
+                else:
+                    print("The region:", region, "is not present in list of endpoints")
+                    sys.exit(1)
 
         return True
 

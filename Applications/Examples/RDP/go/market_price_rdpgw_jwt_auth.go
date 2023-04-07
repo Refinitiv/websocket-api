@@ -36,7 +36,7 @@ func getCurrentTime() (string) {
 
 func main() {
 
-	usage := "Usage: market_price_rdpgw_client_cred_auth.go --clientid clientid --jwkFile client JWK file " +
+	usage := "Usage: market_price_rdpgw_jwt_auth.go --clientid clientid --jwkFile client JWK file " +
 		"[--app_id app_id] [--position position] [--auth_url auth_url] " +
 		"[--hostname hostname] [--port port] [--standbyhostname hostname] [--standbyport port] " +
 		"[--discovery_url discovery_url] [--aud audience] [--scope scope] [--service service] " +

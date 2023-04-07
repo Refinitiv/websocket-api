@@ -5,8 +5,8 @@ ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR 
 
 ## Summary
 
-__IMPORTANT NOTE__ regarding the following example, market_price_rdpgw_client_cred_auth: 
-Version 2 authentication example is available as Early Access to API developers 
+__IMPORTANT NOTE__ regarding the following examples:
+Version 2 authentication examples are available as Early Access to API developers 
 to preview changes required to use this new authentication mechanism. Please note that 
 ability to setup Service Accounts to use this authentication is forthcoming.
 

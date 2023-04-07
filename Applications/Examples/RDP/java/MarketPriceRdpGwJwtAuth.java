@@ -398,14 +398,14 @@ public class MarketPriceRdpGwJwtAuth {
             cmd = parser.parse(options, args);
         } catch (org.apache.commons.cli.ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("MarketPriceRdpGwClientCredAuth", options);
+            formatter.printHelp("MarketPriceRdpGwJwtAuth", options);
             System.exit(1);
             return;
         }
 
         if(cmd.hasOption("help"))
         {
-             formatter.printHelp("MarketPriceRdpGwClientCredAuth", options);
+             formatter.printHelp("MarketPriceRdpGwJwtAuth", options);
              System.exit(0);
         }
         if(cmd.hasOption("port"))
