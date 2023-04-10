@@ -57,6 +57,7 @@ discovery_url = 'https://api.refinitiv.com/streaming/pricing/v1/'
 hostName = ''
 hostName2 = ''
 hostList = []
+backupHostList = []
 hotstandby = False
 port = 443
 port2 = 443
