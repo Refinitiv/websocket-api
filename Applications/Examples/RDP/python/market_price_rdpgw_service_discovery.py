@@ -63,6 +63,7 @@ region = 'us-east-1'
 ric = '/TRI.N'
 service = 'ELEKTRON_DD'
 hostList = []
+backupHostList = []
 hotstandby = False
 # Global Variables
 session2 = None
