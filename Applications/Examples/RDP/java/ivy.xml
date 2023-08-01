@@ -6,5 +6,7 @@
 		<dependency org="org.json" name="json" rev="20220924"/>
 		<dependency org="com.neovisionaries" name="nv-websocket-client" rev="2.14"/>
 		<dependency org="org.bitbucket.b_c" name="jose4j" rev="0.9.3"/>
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.3"/>
+		<dependency org="ch.qos.logback" name="logback-core" rev="1.2.3"/>
     </dependencies>
 </ivy-module>

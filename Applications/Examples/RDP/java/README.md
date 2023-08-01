@@ -203,6 +203,7 @@ To run the example:
   - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
   - Run: `java MarketPriceRdpGwJwtAuth --clientid <clientid> --jwkFile <client JWK> --hostname <hostname>` 
   - Pressing the CTRL+C buttons terminates the example.
+  - To turn on debug, specify appropriate loglevel in logback.xml 
 
 The command line options are:
 
