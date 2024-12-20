@@ -1,7 +1,7 @@
 # R Examples
 
 Example Code Disclaimer:
-ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. REFINITIV MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF EXAMPLE CODE, OR THE INFORMATION, CONTENT OR MATERIALS USED IN CONNECTION WITH EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF EXAMPLE CODE IS AT YOUR SOLE RISK
+ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. LSEG MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF EXAMPLE CODE, OR THE INFORMATION, CONTENT OR MATERIALS USED IN CONNECTION WITH EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF EXAMPLE CODE IS AT YOUR SOLE RISK
 
 ## Summary
 
@@ -26,6 +26,8 @@ the __market\_price__ source file with that of the appropriate example.
 These applications are intended as basic usage examples. Some of the design choices
 were made to favor simplicity and readability over performance. This application 
 is not intended to be used for measuring performance.
+
+Please expect to use this application with smaller messages, as currently, errors may be seen while reading larger sized messages from the websocket connection.
 ## Command Line Usage
 
 ```RScript market_price.R [--hostname hostname] [--port port] [--app_id appID] [--user user] [--snapshot]```
@@ -42,6 +44,7 @@ Pressing the CTRL+C buttons terminates any example.
 ### Windows/macOS
 1. __Install R__
     - Go to: <https://www.r-project.org/about.html>
+    - Download R version 3.6.X, 3.6.3 is our current latest supported version.
     - Follow the installation instructions for your machine
 2. __Install libraries__
     - Run "R" and in the prompt, enter:
