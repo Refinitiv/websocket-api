@@ -190,7 +190,7 @@ class WebSocketSession:
                                                      on_close=self._on_close,
                                                      on_open=self._on_open,
                                                      subprotocols=['tr_json2'])
-        # Event loop
+        # Event loop, including a blocking call for web_socket_app's connection
         if not self.wst:
             print(str(datetime.now()) + " " + self.session_name + ": Connecting WebSocket to " + ws_address + "...")
             self.wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})

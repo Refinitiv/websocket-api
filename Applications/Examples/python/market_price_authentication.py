@@ -154,7 +154,7 @@ if __name__ == "__main__":
                                                 cookie=cookie)
         web_socket_app.on_open = on_open
 
-        # Event loop
+        # Event loop, including a blocking call for web_socket_app's connection
         wst = threading.Thread(target=web_socket_app.run_forever)
         wst.start()
 

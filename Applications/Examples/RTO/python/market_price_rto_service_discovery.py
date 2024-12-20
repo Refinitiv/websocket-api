@@ -209,7 +209,7 @@ class WebSocketSession:
                                                      on_open=self._on_open,
                                                      subprotocols=['tr_json2'])
 
-        # Event loop
+        # Event loop, including a blocking call for web_socket_app's connection
         wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
         wst.start()
 
