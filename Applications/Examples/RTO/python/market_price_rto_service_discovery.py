@@ -169,7 +169,11 @@ class WebSocketSession:
     def _on_message(self, ws, message):
         """ Called when message received, parse message into JSON for processing """
         print("RECEIVED on " + self.session_name + ":")
-        message_json = json.loads(message)
+        if (type(message) == str):
+            message_json = json.loads(message)
+        else:
+            message_ready = message.decode("ISO-8859-1").encode("utf-8")
+            message_json = json.loads(message_ready)
         print(json.dumps(message_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         for singleMsg in message_json:
@@ -210,7 +214,7 @@ class WebSocketSession:
                                                      subprotocols=['tr_json2'])
 
         # Event loop, including a blocking call for web_socket_app's connection
-        wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
+        wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={"sslopt": {"check_hostname": False}, "skip_utf8_validation" : True})
         wst.start()
 
     def disconnect(self):

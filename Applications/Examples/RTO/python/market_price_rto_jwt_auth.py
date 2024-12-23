@@ -155,7 +155,11 @@ class WebSocketSession:
     def _on_message(self, ws, message):
         """ Called when message received, parse message into JSON for processing """
         print(str(datetime.now()) + " RECEIVED on " + self.session_name + ":")
-        message_json = json.loads(message)
+        if (type(message) == str):
+            message_json = json.loads(message)
+        else:
+            message_ready = message.decode("ISO-8859-1").encode("utf-8")
+            message_json = json.loads(message_ready)
         print(json.dumps(message_json, sort_keys=True, indent=2, separators=(',', ':')))
 
         for singleMsg in message_json:
@@ -193,7 +197,7 @@ class WebSocketSession:
         # Event loop, including a blocking call for web_socket_app's connection
         if not self.wst:
             print(str(datetime.now()) + " " + self.session_name + ": Connecting WebSocket to " + ws_address + "...")
-            self.wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
+            self.wst = threading.Thread(target=self.web_socket_app.run_forever, kwargs={"sslopt": {"check_hostname": False}, "skip_utf8_validation" : True})
             self.wst.daemon = True
             self.wst.start()
         elif self.reconnecting and not self.force_disconnected:

@@ -149,11 +149,14 @@ def send_login_request(auth_token, is_refresh_token):
     print("SENT:")
     print(json.dumps(login_json, sort_keys=True, indent=2, separators=(',', ':')))
 
-
 def on_message(_, message):
     """ Called when message received, parse message into JSON for processing """
     print("RECEIVED: ")
-    message_json = json.loads(message)
+    if (type(message) == str):
+        message_json = json.loads(message)
+    else:
+        message_ready = message.decode("ISO-8859-1").encode("utf-8")
+        message_json = json.loads(message_ready)
     print(json.dumps(message_json, sort_keys=True, indent=2, separators=(',', ':')))
 
     for singleMsg in message_json:
@@ -440,7 +443,7 @@ if __name__ == "__main__":
     web_socket_app.on_open = on_open
 
     # Event loop, including a blocking call for web_socket_app's connection
-    wst = threading.Thread(target=web_socket_app.run_forever, kwargs={'sslopt': {'check_hostname': False}})
+    wst = threading.Thread(target=web_socket_app.run_forever, kwargs={"sslopt": {"check_hostname": False}, "skip_utf8_validation" : True})
     wst.start()
 
     try:
