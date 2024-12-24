@@ -138,6 +138,10 @@ if __name__ == "__main__":
     r = requests.post('https://{}:{}/getToken'.format(auth_hostname, auth_port),
                       data={'username': user, 'password': password},
                       verify=True)
+    # Note: Verify set to false disables certificate validation, which you may use instead for testing purposes.
+    #r = requests.post('https://{}:{}/getToken'.format(auth_hostname, auth_port),
+    #                  data={'username': user, 'password': password},
+    #                  verify=False)
     auth_json = r.json()
     print("RECEIVED:")
     print(json.dumps(auth_json, sort_keys=True, indent=2, separators=(',', ':')))
