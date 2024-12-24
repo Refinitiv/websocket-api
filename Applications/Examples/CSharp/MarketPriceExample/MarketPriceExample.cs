@@ -94,25 +94,18 @@ namespace MarketPriceExample
                     SendLogin();
 
                     /* Run a take to read messages */
-                    Task.Factory.StartNew(() =>
-                    {
-                        while (_webSocket.State == WebSocketState.Open)
-                        {
-                            try
-                            {
-                                ReceiveMessage();
-                            }
-                            catch (System.AggregateException)
-                            {
+	            while (_webSocket.State == WebSocketState.Open)
+ 		    {	
+		        try
+		        {
+			    ReceiveMessage();
+			}
+			catch (System.AggregateException)
+			{
                                 System.Console.WriteLine("The WebSocket connection is closed");
                                 Console_CancelKeyPress(null, null);
-                            }
                         }
-                    });
-                }
-                else
-                {
-                    System.Console.WriteLine("Failed to open a WebSocket connection");
+                    }
                 }
             }
             catch (Exception ex)

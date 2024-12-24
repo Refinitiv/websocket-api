@@ -63,7 +63,7 @@ _websocket.onerror = onError;
 // Create and send simple Market Price request
 function sendMarketPriceRequest()
 {
-	var msg = '{"ID":2,"Key":{"Name":"TRI.N"}}';
+	var msg = '{"ID":2,"Streaming":false,"Key":{"Name":"TRI.N"}}';
 	_websocket.send(msg);
 	console.log("SENT:");
 	console.log(JSON.stringify(JSON.parse(msg), null, 2));

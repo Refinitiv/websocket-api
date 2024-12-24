@@ -99,44 +99,42 @@ namespace MarketPricePostingExample
                     SendLogin();
 
                     /* Run a take to read messages */
-                    Task.Factory.StartNew(() =>
-                    {
+		   
                         /* The IP Address and UserID are used as our PostUserInfo when sending post messages.
                          * - We use the current process ID as our user ID. */
-                        int userId = Process.GetCurrentProcess().Id;
+                    int userId = Process.GetCurrentProcess().Id;
 
-                        while (_webSocket.State == WebSocketState.Open)
+                    while (_webSocket.State == WebSocketState.Open)
+                    {
+                        Thread.Sleep(3000);
+                        /* If TRI.N is open, periodically post data to it. */
+                        if (_sendPosts)
                         {
-                            Thread.Sleep(3000);
-                            /* If TRI.N is open, periodically post data to it. */
-                            if (_sendPosts)
-                            {
-                                SendMessage(
-                                        "{\"ID\":2,"
-                                        + "\"Type\":\"Post\","
-                                        + "\"Ack\":true,\"PostID\":" + _postId + ","
-                                        + "\"Domain\":\"MarketPrice\","
-                                        + "\"PostUserInfo\":{\"Address\":\"" + _position + "\",\"UserID\":" + userId + "},"
-                                        + "\"Message\":{"
-                                            + "\"ID\":0,\"Type\":\"Update\",\"Domain\":\"MarketPrice\","
-                                            + "\"Fields\":{\"BID\": 45.55,\"BIDSIZE\": 18,\"ASK\": 45.57,\"ASKSIZE\": 19}"
-                                        + "}"
-                                        + "}");
+                            SendMessage(
+                                    "{\"ID\":2,"
+                                    + "\"Type\":\"Post\","
+                                    + "\"Ack\":true,\"PostID\":" + _postId + ","
+                                    + "\"Domain\":\"MarketPrice\","
+                                    + "\"PostUserInfo\":{\"Address\":\"" + _position + "\",\"UserID\":" + userId + "},"
+                                    + "\"Message\":{"
+                                        + "\"ID\":0,\"Type\":\"Update\",\"Domain\":\"MarketPrice\","
+                                        + "\"Fields\":{\"BID\": 45.55,\"BIDSIZE\": 18,\"ASK\": 45.57,\"ASKSIZE\": 19}"
+                                    + "}"
+                                    + "}");
 
-                                ++_postId;
-                            }
-
-                            try
-                            {
-                                ReceiveMessage();
-                            }
-                            catch (System.AggregateException)
-                            {
-                                System.Console.WriteLine("The WebSocket connection is closed");
-                                Console_CancelKeyPress(null, null);
-                            }
+                            ++_postId;
                         }
-                    });
+
+                        try
+                        {
+                            ReceiveMessage();
+                        }
+                        catch (System.AggregateException)
+                        {
+                            System.Console.WriteLine("The WebSocket connection is closed");
+                            Console_CancelKeyPress(null, null);
+                        }
+                    }
                 }
                 else
                 {

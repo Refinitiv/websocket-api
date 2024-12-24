@@ -57,7 +57,7 @@ con = websocket(ws_address, port=as.integer(port), subprotocol="tr_json2", versi
 
 # Create and send simple Market Price request
 send_market_price_request = function(con) {
-  mp_req_json_string = "{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"}}"
+  mp_req_json_string = "{\"ID\":2,\"Streaming\":false,\"Key\":{\"Name\":\"TRI.N\"}}"
   mp_req_json = fromJSON(mp_req_json_string)
   websocket_write(mp_req_json_string, con)
   cat("SENT:\n")

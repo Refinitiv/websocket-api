@@ -132,14 +132,14 @@ namespace MarketPriceAuthenticationExample
             Console.WriteLine("Sending authentication request (isRefresh {0}) to {1}", isRefresh, url);
 
             var headers = httpClient.DefaultRequestHeaders;
-            headers.UserAgent.TryParseAdd("CSharpMarketPriceRTOClientCredAuthExample");
+            headers.UserAgent.TryParseAdd("CSharpMarketPriceAuthenticationExample");
 
             try
             {
                 /* Send username and password in request. */
                 string postString = "username=" + _userName + "&password=" + _password;
 
-                var content = new StringContent(postString, Encoding.ASCII, "application/x-www-form-urlencoded");
+                var content = new StringContent(postString, Encoding.UTF8, "application/x-www-form-urlencoded");
                 using var response = httpClient.PostAsync(url, content).Result;
 
                 if (response.IsSuccessStatusCode)
@@ -226,7 +226,7 @@ namespace MarketPriceAuthenticationExample
             _position = (hostEntry == null) ? "127.0.0.1/net" : hostEntry.ToString();
 
             /* Open a websocket. */
-            Uri uri = new Uri("wss://" + _hostName + ":" + _port + "/WebSocket");
+            Uri uri = new Uri("ws://" + _hostName + ":" + _port + "/WebSocket");
             Console.WriteLine("Connecting to WebSocket " + uri.AbsoluteUri + " ...");
 
             if (!GetAuthenticationInfo(false))
@@ -246,22 +246,19 @@ namespace MarketPriceAuthenticationExample
                 {
                     SendLogin(false);
 
-                    /* Run a take to read messages */
-                    Task.Factory.StartNew(() =>
+                    /* Read messages */
+                    while (_webSocket.State == WebSocketState.Open)
                     {
-                        while (_webSocket.State == WebSocketState.Open)
+                        try
                         {
-                            try
-                            {
-                                ReceiveMessage();
-                            }
-                            catch (System.AggregateException)
-                            {
-                                System.Console.WriteLine("The WebSocket connection is closed");
-                                Console_CancelKeyPress(null, null);
-                            }
+                            ReceiveMessage();
                         }
-                    });
+                        catch (System.AggregateException)
+                        {
+                            System.Console.WriteLine("The WebSocket connection is closed");
+                            Console_CancelKeyPress(null, null);
+                        }
+                    }
                 }
                 else
                 {
@@ -285,16 +282,16 @@ namespace MarketPriceAuthenticationExample
         /// <param name="e">The <c>ConsoleCancelEventArgs</c> if any</param>
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-           if (_webSocket != null)
-           {
+            if (_webSocket != null)
+            {
                 if (_webSocket.State == WebSocketState.Open)
                 {
                     Console.WriteLine("The WebSocket connection is closed");
                     _cts.Cancel();
                     _webSocket.Dispose();
                 }
-           }
-           Environment.Exit(0);
+            }
+            Environment.Exit(0);
         }
 
         /// <summary>Reads data from the WebSocket and parses to JSON message</summary>

@@ -61,6 +61,7 @@ opt_parser.parse!
 def send_market_price_request(ws)
   mp_req_json_hash = {
     'ID' => 2,
+	'Streaming' => false,
     'Key' => {
       'Name' => 'TRI.N'
     }

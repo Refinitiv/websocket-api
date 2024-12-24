@@ -84,6 +84,9 @@ sub process_message {
 		if (not($message_domain eq "")) {
 			if ($message_domain eq "Login") {
 				$ping_timeout_interval = int($message_json->{'Elements'}{'PingTimeout'});
+				if ($ping_timeout_interval == 0) {
+					$ping_timeout_interval = 30;
+				}
 				send_market_price_request($tx);
 			}
 		}
@@ -106,6 +109,7 @@ sub send_market_price_request {
 	my ($tx) = @_;
 	my %mp_req_json_hash = (
         'ID' => 2,
+		'Streaming' => false,
         'Key' => {
             'Name' => 'TRI.N',
         },

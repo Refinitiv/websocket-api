@@ -214,7 +214,7 @@ public class MarketPricePing {
      */
     public static void sendRequest(WebSocket websocket) throws JSONException {
         String requestJsonString;
-        requestJsonString = "{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"}}";
+        requestJsonString = "{\"ID\":2,\"Streaming\":false,\"Key\":{\"Name\":\"TRI.N\"}}";
         JSONObject mpRequestJson = new JSONObject(requestJsonString);
         websocket.sendText(requestJsonString);
         System.out.println("SENT:\n" + mpRequestJson.toString(2));

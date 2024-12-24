@@ -142,7 +142,8 @@ func main() {
 func processMessage(c *websocket.Conn, message map[string]interface{} ) {
 	switch message["Type"] {
 		case "Refresh":
-			if(message["Domain"] == "Login"){
+			if(message["Domain"] == "Login" &&
+				message["Elements"] != nil){
 				elements := message["Elements"].(map[string]interface{})
 				pingTimeoutInterval = int64(elements["PingTimeout"].(float64))
 				sendMarketPriceRequest(c)
@@ -155,7 +156,7 @@ func processMessage(c *websocket.Conn, message map[string]interface{} ) {
 
 // Create and send simple Market Price request
 func sendMarketPriceRequest(c *websocket.Conn) {
-	sendMessage(c, []byte(`{"ID":2,"Key":{"Name":"TRI.N"}}`))
+	sendMessage(c, []byte(`{"ID":2,"Streaming":false,"Key":{"Name":"TRI.N"}}`))
 }
 
 // Helper to send bytes over WebSocket connection

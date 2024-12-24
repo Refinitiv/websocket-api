@@ -61,6 +61,7 @@ def send_market_price_request(ws):
     """ Create and send simple Market Price request """
     mp_req_json = {
         'ID': 2,
+        'Streaming': False,
         'Key': {
             'Name': 'TRI.N',
         },
