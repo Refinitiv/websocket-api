@@ -107,31 +107,8 @@ namespace MarketPricePingExample
                     /* Run a take to read messages */
                     Task.Factory.StartNew(() =>
                     {
-                        _stopwatch = new Stopwatch();
-                        _stopwatch.Start();
-
-                        /* Received a message or a ping; update ping timeout time. */
-                        _pingTimeoutTimeMs = 0;
-                        _pingSendTimeMs = _stopwatch.ElapsedMilliseconds + _pingTimeoutIntervalMs / 3;
-
                         while (_webSocket.State == WebSocketState.Open)
                         {
-                            Thread.Sleep(1000);
-                            /* If we haven't recieved traffic in some time, send a Ping to confirm the connection is alive. */
-                            if (_pingSendTimeMs > 0 && _stopwatch.ElapsedMilliseconds >= _pingSendTimeMs)
-                            {
-                                SendMessage("{ \"Type\":\"Ping\"}");
-                                _pingSendTimeMs = 0;
-                                _pingTimeoutTimeMs = _stopwatch.ElapsedMilliseconds + _pingTimeoutIntervalMs;
-                            }
-
-                            /* If we sent a Ping, but did not receieve a Pong in response, exit. */
-                            if (_pingTimeoutTimeMs > 0 && _stopwatch.ElapsedMilliseconds >= _pingTimeoutTimeMs)
-                            {
-                                Console.WriteLine("Server ping timed out.");
-                                Environment.Exit(1);
-                            }
-
                             try
                             {
                                 ReceiveMessage();
@@ -143,6 +120,40 @@ namespace MarketPricePingExample
                             }
                         }
                     });
+
+                    _stopwatch = new Stopwatch();
+                    _stopwatch.Start();
+
+		            while (true)
+		            {
+
+                        Thread.Sleep(1000);
+                        /* If we haven't recieved traffic in some time, send a Ping to confirm the connection is alive. */
+                        if (_stopwatch.ElapsedMilliseconds >= _pingSendTimeMs)
+                        {
+                            SendMessage("{ \"Type\":\"Ping\"}");
+                            _pingSendTimeMs = _stopwatch.ElapsedMilliseconds + _pingTimeoutIntervalMs / 3;
+			                _pingTimeoutTimeMs += _pingTimeoutIntervalMs / 3; 
+                        }
+
+                        // Uncomment if you want additional debug information about how the ping timeout and stopwatch works for the example
+                        //System.Console.WriteLine("DEBUG: _pingTimeoutTimeMs is {0}, _pingSendTimeMs is {1} and stopWatch is {2}", _pingTimeoutTimeMs, _pingSendTimeMs, _stopwatch.ElapsedMilliseconds);
+
+                        /* If we sent a Ping, but did not receieve a Pong in response, exit. */
+                        //if (_pingTimeoutTimeMs > 0 && _stopwatch.ElapsedMilliseconds >= _pingTimeoutTimeMs)
+                        if (_pingTimeoutTimeMs > 0 && _pingTimeoutTimeMs >= _pingTimeoutIntervalMs)
+                        {
+                            Console.WriteLine("Server ping timed out.");
+                            Environment.Exit(1);
+                        }
+
+			            if (_webSocket.State == WebSocketState.Aborted)
+			            {
+			                System.Console.WriteLine("The WebSocket connection is closed");
+			                Console_CancelKeyPress(null, null);
+			                break;
+		                }
+		            }
                 }
                 else
                 {
@@ -210,14 +221,15 @@ namespace MarketPricePingExample
                     /* Received message(s). */
                     JArray messages = JArray.Parse(reader.ReadToEnd());
                     /* Print the message (format the object string for easier reading). */
-                    Console.WriteLine("RECEIVED:\n{0}\n", JsonConvert.SerializeObject(messages, Formatting.Indented));
+                    Console.WriteLine("RECEIVED AT " + DateTime.Now + ":\n{0}\n", JsonConvert.SerializeObject(messages, Formatting.Indented));
 
                     for (int index = 0; index < messages.Count; ++index)
                         ProcessJsonMsg(messages[index]);
 
                     /* Received a message or a ping; update ping timeout time. */
                     _pingTimeoutTimeMs = 0;
-                    _pingSendTimeMs = _stopwatch.ElapsedMilliseconds + _pingTimeoutIntervalMs / 3;
+		            _pingSendTimeMs = _pingTimeoutIntervalMs / 3; 
+                    _stopwatch.Restart();
                 }
             }
         }
@@ -270,6 +282,7 @@ namespace MarketPricePingExample
                             SendMessage(
                                 "{"
                                 + "\"ID\": 2,"
+                                + "\"Streaming\": false,"
                                 + "\"Key\": {\"Name\":\"TRI.N\"}"
                                 + "}"
                                 );
@@ -289,7 +302,7 @@ namespace MarketPricePingExample
         void SendMessage(string jsonMsg)
         {
             /* Print the message (format the object string for easier reading). */
-            Console.WriteLine("SENT:\n{0}\n", JsonConvert.SerializeObject(JsonConvert.DeserializeObject(jsonMsg), Formatting.Indented));
+            Console.WriteLine("SENT AT " + DateTime.Now + ":\n{0}\n", JsonConvert.SerializeObject(JsonConvert.DeserializeObject(jsonMsg), Formatting.Indented));
 
             var encoded = Encoding.ASCII.GetBytes(jsonMsg);
             var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
