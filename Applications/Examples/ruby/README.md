@@ -94,3 +94,6 @@ Pressing the CTRL+C buttons terminates any example.
 * `market_price_posting.rb` - Source file for the market\_price\_posting example.
 
 * `market_price_ping.rb` - Source file for the market\_price\_ping example.
+
+## Versions Used In Test
+- Ruby 3.2.2

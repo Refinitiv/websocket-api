@@ -2,13 +2,13 @@
 #|            This source code is provided under the Apache 2.0 license
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 #|                See the project's LICENSE.md for details.
-#|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+#|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 #|-----------------------------------------------------------------------------
 
 
 # Simple example of outputting Market Price JSON data using Websockets with authentication
 
-require("websockets") # https://github.com/brettjbush/R-Websockets
+require("websocket")
 require("jsonlite")
 require("curl")
 require("GetoptLong")
@@ -80,51 +80,66 @@ if (auth_json$success) {
 
   # Start websocket handshake
   ws_address = paste("ws://", hostname, ":", port, "/WebSocket", sep="")
-  cat(paste("Connecting to WebSocket", ws_address, "...\n"))
-  header_entry = list(name="Cookie", value=paste("AuthToken=", auth_token, ";AuthPosition=", position, ";applicationId=", app_id,";", sep=""))
-  headers_list = list(header_entry)
-  con = websocket(ws_address, port=as.integer(port), subprotocol="tr_json2", headers=headers_list, version=13)
+
+  cookie_value <- sprintf(
+    "AuthToken=%s; Position=%s; ApplicationId=%s",
+    auth_token,
+	position,
+	app_id
+  )
+
+  headers <- list(
+    Cookie = cookie_value
+  )
+
+  cat(sprintf("Connecting to WebSocket %s ...\n", ws_address))
+  
+  ws <- WebSocket$new(
+    ws_address,
+    protocols = "tr_json2",
+    headers   = headers
+  )
+
 
   # Create and send simple Market Price request
-  send_market_price_request = function(con) {
+  send_market_price_request = function(ws) {
     mp_req_json_string = "{\"ID\":2,\"Key\":{\"Name\":\"TRI.N\"}}"
     mp_req_json = fromJSON(mp_req_json_string)
-    websocket_write(mp_req_json_string, con)
+    ws$send(mp_req_json_string)
     cat("SENT:\n")
     cat(toJSON(mp_req_json, pretty=TRUE, auto_unbox=TRUE))
     cat("\n")
   }
 
   # Parse at high level and output JSON of message
-  process_message = function(con, message_json) {
+  process_message = function(ws, message_json) {
     message_type = message_json$Type
 
     if(message_type == "Refresh") {
   	message_domain = message_json$Domain
   	if(!is.null(message_domain)) {
   	  if(message_domain == "Login") {
-  	    send_market_price_request(con)
+  	    send_market_price_request(ws)
   	  }
     }
     } else if (message_type == "Ping") {
       pong_json_string = "{\"Type\":\"Pong\"}"
       pong_json = fromJSON(pong_json_string)
-      websocket_write(pong_json_string, con)
+      ws$send(pong_json_string)
       cat("SENT:\n")
       cat(toJSON(pong_json, pretty=TRUE, auto_unbox=TRUE))
       cat("\n")
       }
   }
 
-  # Called when handshake is complete and websocket is open, send login
-  e = function(WS) {
-    cat("WebSocket successfully connected!\n")
-  }
-  set_callback("established", e, con)
+  # Called when handshake is complete and websocket is open
+  ws$onOpen(function(event) {
+  cat("WebSocket successfully connected!\n")
+  })
 
   # Called when message received, parse message into JSON for processing
-  r = function(DATA,WS,...) {
-    message = rawToChar(DATA)
+  ws$onMessage(function(event) {
+    message = event$data
     jsonArray = fromJSON(message, simplifyDataFrame=FALSE)
 
     cat("RECEIVED:\n")
@@ -132,18 +147,16 @@ if (auth_json$success) {
     cat("\n")
 
     for (singleMsg in jsonArray)
-       process_message(con, singleMsg)
-  }
-  set_callback("receive", r, con)
+       process_message(ws, singleMsg)
+  })
 
   # Called when websocket is closed
-  c = function(WS) {
+  ws$onClose(function(event) {
     cat("WebSocket Closed\n")
-  }
-  set_callback("closed", c, con)
+  })
 
   while (TRUE) {
-    service(con)
+
   }
 } else {
   cat("Authentication failed")

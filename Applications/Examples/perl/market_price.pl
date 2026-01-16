@@ -2,7 +2,7 @@
 #|            This source code is provided under the Apache 2.0 license
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 #|                See the project's LICENSE.md for details.
-#|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+#|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 #|-----------------------------------------------------------------------------
 
 
@@ -27,7 +27,28 @@ $user = "root";
 $app_id = "256";
 $position = inet_ntoa(scalar(gethostbyname(hostname())) || 'localhost');
 $snapshot = 0;
+$service = "";
 $help = "";
+
+$updateTypeFilter = -1;		# Determines what Update Types are desired. See more details below.
+$negativeUpdateTypeFilter = -1; # Determines what Update Types are NOT desired. See more details below.
+
+#### Update Type Filters ####
+# A single value, converted into binary, can be used to determine what Update Types
+#    you want filtered in your responses.
+# UPDATE TYPE FILTERS
+# Unspecified = 0x001
+# Quote = 0x002
+# Trade = 0x004
+# News Alert = 0x008
+# Volume Alert = 0x010
+# Order Indication = 0x020
+# Closing Run = 0x040
+# Correction = 0x080
+# Market Digest = 0x100
+# Quotes Trade = 0x200
+# Multiple = 0x400
+# Verify = 0x800
 
 # Global Variables
 $web_socket_open = 0;
@@ -40,10 +61,10 @@ sub myhand
 }
 
 # Get command line parameters
-GetOptions ('hostname=s' => \$hostname, 'port=s' => \$port, 'user=s' => \$user, 'app_id=s' => \$app_id, 'position=s' => \$position, 'snapshot+' => \$snapshot, 'help' => \$help);
+GetOptions ('hostname=s' => \$hostname, 'port=s' => \$port, 'user=s' => \$user, 'app_id=s' => \$app_id, 'position=s' => \$position, 'snapshot+' => \$snapshot, 'updateTypeFilter=i' => \$updateTypeFilter, 'negativeUpdateTypeFilter=i' => \$negativeUpdateTypeFilter, 'service=s' => \$service, 'help' => \$help);
 
 if(not $help eq "") {
-	print "Usage: market_price.pl [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]\n";
+	print "Usage: market_price.pl [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--updateTypeFilter] [--negativeUpdateTypeFilter] [--service] [--help]\n";
 	exit 0;
 }
 
@@ -57,7 +78,7 @@ sub send_login_request {
 			'Name' => '',
 			'Elements' => {
 					'ApplicationId' => '',
-					'Position' => ''
+					'Position' => '',
 			}
 		}
 	);
@@ -65,6 +86,12 @@ sub send_login_request {
 	$login_json_hash{'Key'}{'Name'} = $user;
 	$login_json_hash{'Key'}{'Elements'}{'ApplicationId'} = $app_id;
 	$login_json_hash{'Key'}{'Elements'}{'Position'} = $position;
+	if ($updateTypeFilter ne -1) {
+		$login_json_hash{'Key'}{'Elements'}{'UpdateTypeFilter'} = int($updateTypeFilter);
+	}
+	if ($negativeUpdateTypeFilter ne -1) {
+		$login_json_hash{'Key'}{'Elements'}{'NegativeUpdateTypeFilter'} = int($negativeUpdateTypeFilter);
+	}
 	
 	my $json = encode_json \%login_json_hash;
 	my $json_pretty = JSON->new->pretty->encode(\%login_json_hash);
@@ -102,15 +129,19 @@ sub process_message {
 
 # Create and send simple Market Price request
 sub send_market_price_request {
+	if (length($service) <= 0) {
+		$service = 'ELEKTRON_DD'
+	}
 	my ($tx) = @_;
 	my %mp_req_json_hash = (
 		'ID' => 2,
 		'Key' => {
 			'Name' => 'TRI.N',
+			'Service' => '',
 		},
 		'Streaming' => ($snapshot) >= 1 ? 0 : 1,
 	);
-
+	$mp_req_json_hash{'Key'}{'Service'} = $service;
 	my $json = encode_json \%mp_req_json_hash;
 	my $json_pretty = JSON->new->pretty->encode(\%mp_req_json_hash);
 	$tx->send($json);

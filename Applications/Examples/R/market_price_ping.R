@@ -2,13 +2,13 @@
 #|            This source code is provided under the Apache 2.0 license
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 #|                See the project's LICENSE.md for details.
-#|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+#|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 #|-----------------------------------------------------------------------------
 
 
 # Simple example of outputting Market Price JSON data using Websockets
 
-require("websockets") # https://github.com/brettjbush/R-Websockets
+require("websocket")
 require("jsonlite")
 require("GetoptLong")
 
@@ -53,20 +53,20 @@ ping_send_time = 0
 # Start websocket handshake
 ws_address = paste("ws://", hostname, ":", port, "/WebSocket", sep="")
 cat(paste("Connecting to WebSocket", ws_address, "...\n"))
-con = websocket(ws_address, port=as.integer(port), subprotocol="tr_json2", version=13)
+ws = WebSocket$new(ws_address, protocols="tr_json2")
 
 # Create and send simple Market Price request
-send_market_price_request = function(con) {
+send_market_price_request = function(ws) {
   mp_req_json_string = "{\"ID\":2,\"Streaming\":false,\"Key\":{\"Name\":\"TRI.N\"}}"
   mp_req_json = fromJSON(mp_req_json_string)
-  websocket_write(mp_req_json_string, con)
+  ws$send(mp_req_json_string)
   cat("SENT:\n")
   cat(toJSON(mp_req_json, pretty=TRUE, auto_unbox=TRUE))
   cat("\n")
 }
 
 # Parse at high level and output JSON of message
-process_message = function(con, message_json) {
+process_message = function(ws, message_json) {
   message_type = message_json$Type
 
   if(message_type == "Refresh") {
@@ -74,13 +74,13 @@ process_message = function(con, message_json) {
 	if(!is.null(message_domain)) {
 	  if(message_domain == "Login") {
       ping_timeout_interval <<- as.integer(message_json$Elements$PingTimeout)
-	    send_market_price_request(con)
+	    send_market_price_request(ws)
 	  }
 	}
   } else if (message_type == "Ping") {
     pong_json_string = "{\"Type\":\"Pong\"}"
     pong_json = fromJSON(pong_json_string)
-    websocket_write(pong_json_string, con)
+    ws$send(pong_json_string)
     cat("SENT:\n")
     cat(toJSON(pong_json, pretty=TRUE, auto_unbox=TRUE))
     cat("\n")
@@ -88,28 +88,27 @@ process_message = function(con, message_json) {
 }
 
 # Generate a login request from command line data (or defaults) and send
-send_login_request = function(con) {
+send_login_request = function(ws) {
   login_json_string = "{\"ID\":1,\"Domain\":\"Login\",\"Key\":{\"Name\":\"<USER>\",\"Elements\":{\"ApplicationId\":\"<APP_ID>\",\"Position\":\"<POSITION>\"}}}"
   login_json_string = gsub("<USER>", user, login_json_string)
   login_json_string = gsub("<APP_ID>", app_id, login_json_string)
   login_json_string = gsub("<POSITION>", position, login_json_string)
   login_json = fromJSON(login_json_string)
-  websocket_write(login_json_string, con)
+  ws$send(login_json_string)
   cat("SENT:\n")
   cat(toJSON(login_json, pretty=TRUE, auto_unbox=TRUE))
   cat("\n")
 }
 
 # Called when handshake is complete and websocket is open, send login
-e = function(WS) {
-  cat("WebSocket successfully connected!\n")
-  send_login_request(con)
-}
-set_callback("established", e, con)
+ws$onOpen(function(event) {
+cat("WebSocket successfully connected!\n")
+  send_login_request(ws)
+})
 
 # Called when message received, parse message into JSON for processing
-r = function(DATA,WS,...) {
-  message = rawToChar(DATA)
+ws$onMessage(function(event) {
+  message = event$data
   jsonArray = fromJSON(message, simplifyDataFrame=FALSE)
 
   cat("RECEIVED:\n")
@@ -117,28 +116,29 @@ r = function(DATA,WS,...) {
   cat("\n")
 
   for (singleMsg in jsonArray)
-     process_message(con, singleMsg)
+     process_message(ws, singleMsg)
 
    ping_timeout_time <<- 0
    ping_send_time <<- Sys.time() + ping_timeout_interval / 3
+})
+# Called when message received, parse message into JSON for processing
+r = function(DATA,WS,...) {
+
 }
-set_callback("receive", r, con)
 
 # Called when websocket is closed
-c = function(WS) {
+ws$onClose(function(event) {
   cat("WebSocket Closed\n")
-}
-set_callback("closed", c, con)
+})
 
 # Event loop and ping
 ping_timeout_time = 0
 ping_send_time = Sys.time() + ping_timeout_interval / 3
 while (TRUE) {
-  service(con)
   if (ping_send_time > 0 && Sys.time() > ping_send_time) {
     ping_json_string = "{\"Type\":\"Ping\"}"
     ping_json = fromJSON(ping_json_string)
-    websocket_write(ping_json_string, con)
+    ws$send(ping_json_string)
     cat("SENT:\n")
     cat(toJSON(ping_json, pretty=TRUE, auto_unbox=TRUE))
     cat("\n")
@@ -149,7 +149,7 @@ while (TRUE) {
   }
   if (ping_timeout_time > 0 && Sys.time() > ping_timeout_time) {
     cat("No ping from server, timing out\n")
-    websocket_close(con)
+    ws$close()
     break
   }
 }

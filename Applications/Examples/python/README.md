@@ -50,7 +50,7 @@ Pressing the CTRL+C buttons terminates any example.
 2. __Install libraries__
     - Run (in order):
       - `pip install requests`
-      - `pip install websocket-client`
+      - `pip install websockets`
 	    **The websocket-client must be version 0.48**
       - (Only for Python versions less than 3.3) `pip install ipaddress` 
 3. __Run examples__
@@ -68,3 +68,12 @@ Pressing the CTRL+C buttons terminates any example.
 * `market_price_posting.py` - Source file for the market\_price example.
 
 * `market_price_ping.py` - Source file for the market\_price\_ping example.
+
+## Websockets Library Information
+By default, this application uses the Websockets library to initiate websocket connections.
+It may use environment variables to alter its connection, such as http_proxy and https_proxy.
+See details about the websockets library here: https://pypi.org/project/websockets/
+
+
+## Versions Used In Test
+- Python 3.13.1

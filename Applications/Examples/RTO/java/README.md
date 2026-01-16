@@ -67,46 +67,14 @@ are not intended to be used for measuring performance.
 
 
 ## Setup 
-### Windows
-1. __Install Ant/Ivy__
-    - Install __Ant__
-      - Download from <http://ant.apache.org/bindownload.cgi>
-      - Follow installation instructions in package (basically, copy the unzipped folder to a location of your choice, and set __ANT\_HOME__ to that location)
-    - Install __Ivy__
-      - Download from <https://ant.apache.org/ivy/download.cgi>
-      - Follow installation instructions in package (basically, copy the `ivy-<version>.jar` file to the `lib/` subfolder of your copy of ant)
-2. __Build__
-    - Run:
-	    -  `ant`
-	- Ant should download the dependent libraries via Ivy, and compile the examples.
-    - NOTE: When finished, the build conveniently prints a classpath for use when running the
-      examples.
-
-### RedHat/Oracle Linux
-1. __Install Ant/Ivy via Yum__
-    - Run (as root):
-	    - `yum install ant ivy`
-        - If these packages are not available on your system, they may be available in one of the following repositories:
-          - (RedHat 6, Oracle 6) Extra Packages for Enterprise Linux (<https://fedoraproject.org/wiki/EPEL>):
-            `rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm`
-		  - (Oracle 6, Oracle 7) Download the appropriate repository file for the system and enable the latest/addons repositories, as described here: <https://docs.oracle.com/cd/E37670_01/E37355/html/ol_downloading_yum_repo.html>
-
-2. __Build__
-    - Run:
-	    -  `ant`
-    - Ant should download the dependent libraries via Ivy, and compile the examples.
-    - NOTE: When finished, the build conveniently prints a classpath for use when running the
-      examples.
+Run ./gradlew build
 
 ## Running the Examples
 
 ### Running the MarketPriceRTOAuthentication Example
 
 To run the example:
-  - Set the classpath that Ant gave you:
-	- `set CLASSPATH=<classpath from ant>` (Windows)
-    - `export CLASSPATH=<classpath from ant>` (Linux)
-  - Run: `java MarketPriceRTOAuthentication --user <username> --password <password> --clientid <clientid> --hostname <hostname>`
+  - Run: `./gradlew :MarketPriceRTOAuthentication:run --args="--user <username> --password <password> --clientid <clientid> --hostname <hostname>"`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -135,8 +103,7 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 ### Running the MarketPriceRTOServiceDiscovery Example
 
 To run the example:
-  - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
-  - Run: `java MarketPriceRTOServiceDiscovery --user <username> --password <password> --clientid <clientid>`
+  - Run: `./gradlew :MarketPriceRTOServiceDiscovery:run --args="--user <username> --password <password> --clientid <clientid>"`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -167,8 +134,7 @@ NOTE about newPassword: Acceptable passwords may be 15 characters long and have 
 ### Running the MarketPriceRTOClientCredAuth Example
 
 To run the example:
-  - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
-  - Run: `java MarketPriceRTOClientCredAuth --clientid <clientid> --clientsecret <clientsecret> --hostname <hostname>` 
+  - Run: `./gradlew :MarketPriceRTOClientCredAuth:run --args="--clientid <clientid> --clientsecret <clientsecret> --hostname <hostname>"`
   - Pressing the CTRL+C buttons terminates the example.
 
 The command line options are:
@@ -200,8 +166,7 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 ### Running the MarketPriceRTOJwtAuth Example
 
 To run the example:
-  - Set the classpath that Ant gave you: `export CLASSPATH=<classpath from ant>`
-  - Run: `java MarketPriceRTOJwtAuth --clientid <clientid> --jwkFile <client JWK> --hostname <hostname>` 
+  - Run: `./gradlew :MarketPriceRTOJwtAuth:run --args="--clientid <clientid> --jwkFile <client JWK> --hostname <hostname>"`
   - Pressing the CTRL+C buttons terminates the example.
   - To turn on debug, specify appropriate loglevel in logback.xml 
 
@@ -231,3 +196,7 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 #### Source File Description
 
 * `MarketPriceRTOJwtAuth.java` - Source file for the MarketPriceRTOJwtAuth example.
+
+## Versions Used In Test
+- JDK 11
+- Gradle 8.9

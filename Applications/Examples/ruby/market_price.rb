@@ -2,7 +2,7 @@
 #|            This source code is provided under the Apache 2.0 license 
 #|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 #|                See the project's LICENSE.md for details.
-#|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+#|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 #|-----------------------------------------------------------------------------
 
 #!/usr/bin/ruby
@@ -21,6 +21,9 @@ $user = 'root'
 $app_id = '256'
 $position = Socket.ip_address_list[0].ip_address
 $snapshot = false
+$updateTypeFilter = -1
+$negativeUpdateTypeFilter = -1
+$service = 'ELEKTRON_DD'
 
 # Get command line parameters
 opt_parser = OptionParser.new do |opt|
@@ -48,9 +51,21 @@ opt_parser = OptionParser.new do |opt|
   opt.on('--snapshot','SNAPSHOT') do |snapshot|
     $snapshot = true
   end
+
+  opt.on('--updateTypeFilter UPDATETYPEFILTER','UPDATETYPEFILTER') do |updateTypeFilter|
+    $updateTypeFilter = updateTypeFilter
+  end
+
+  opt.on('--negativeUpdateTypeFilter NEGATIVEUPDATETYPEFILTER','NEGATIVEUPDATETYPEFILTER') do |negativeUpdateTypeFilter|
+    $negativeUpdateTypeFilter = negativeUpdateTypeFilter
+  end
+
+  opt.on('--service SERVICE','SERVICE') do |service|
+    $service = service
+  end
   
   opt.on('--help','HELP') do |help|
-	puts 'Usage: market_price.rb [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]'
+	puts 'Usage: market_price.rb [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--updateTypeFilter] [--negativeUpdateTypeFilter] [--service] [--help]'
 	exit 0
   end
 end
@@ -62,10 +77,12 @@ def send_market_price_request(ws)
   mp_req_json_hash = {
     'ID' => 2,
     'Key' => {
-      'Name' => 'TRI.N'
+      'Name' => 'TRI.N',
+      'Service' => ''
     },
     'Streaming' => !$snapshot
   }
+  mp_req_json_hash['Key']['Service'] = $service
   ws.send mp_req_json_hash.to_json.to_s
   puts 'SENT:'
   puts JSON.pretty_generate(mp_req_json_hash) 
@@ -116,7 +133,7 @@ end
 # Called when handshake is complete and websocket is open, send login
 ws.on :open do
   puts 'WebSocket successfully connected!'
-  
+
   login_hash = {
     'ID' => 1,
     'Domain' => 'Login',
@@ -124,7 +141,7 @@ ws.on :open do
       'Name' => '',
       'Elements' => {
         'ApplicationId' => '',
-        'Position' => ''
+        'Position' => '',
       }
     }
   }
@@ -132,6 +149,12 @@ ws.on :open do
   login_hash['Key']['Name'] = $user
   login_hash['Key']['Elements']['ApplicationId'] = $app_id
   login_hash['Key']['Elements']['Position'] = $position
+  if $updateTypeFilter != -1 then
+    login_hash['Key']['Elements']['UpdateTypeFilter'] = $updateTypeFilter.to_i
+  end
+  if $negativeUpdateTypeFilter != -1 then
+    login_hash['Key']['Elements']['NegativeUpdateTypeFilter'] = $negativeUpdateTypeFilter.to_i
+  end
   
   ws.send login_hash.to_json.to_s
   puts 'SENT:'

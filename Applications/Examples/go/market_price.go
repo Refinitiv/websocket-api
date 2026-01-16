@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 //|                See the project's LICENSE.md for details.
-//|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+//|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 //|-----------------------------------------------------------------------------
 
 
@@ -34,6 +34,33 @@ func main() {
 	user := flag.String("user", "root", "user")
 	appId := flag.String("app_id", "256", "application id")
 	snapshot := flag.Bool("snapshot", false, "snapshot")
+	service := flag.String("service", "", "service")
+	updateTypeFilter := flag.Int("updateTypeFilter", -1, "updateTypeFilter")	// See details below about Update Type Filter
+	negativeUpdateTypeFilter:= flag.Int("negativeUpdateTypeFilter", -1, "negativeUpdateTypeFilter")		// See details below about Negative Update Type Filter
+
+        /*
+            - Update Type Filters -
+            Update Type Filter specifies the update types DESIRED
+
+            Negative Update Type Filter specifies the update types NOT DESIRED
+
+            A single value, converted into binary, can be used to determine what Update Types
+            you want filtered in your responses.
+
+            UPDATE TYPE FILTERS
+            Unspecified = 0x001
+            Quote = 0x002
+            Trade = 0x004
+            News Alert = 0x008
+            Volume Alert = 0x010
+            Order Indication = 0x020
+            Closing Run = 0x040
+            Correction = 0x080
+            Market Digest = 0x100
+            Quotes Trade = 0x200
+            Multiple = 0x400
+            Verify = 0x800
+         */
 
 	positionDefault := ""
 	host, _ := os.Hostname()
@@ -88,13 +115,24 @@ func main() {
 			json.Unmarshal(message, &jsonArray)
 
 			for _,singleMsg := range jsonArray {
-				processMessage(c, singleMsg, snapshot)
+				processMessage(c, singleMsg, snapshot, service)
 			}
 		}
 	}()
 
 	// Generate a login request from command line data (or defaults) and send
-	loginMessageBytes := []byte(`{"ID":1,"Domain":"Login","Key":{"Name":"<USER>","Elements":{"ApplicationId":"<APP_ID>","Position":"<POSITION>"}}}`)
+	updateTypeFilterText := ""
+	negativeUpdateTypeFilterText := ""
+	if *updateTypeFilter >= 0 {
+		updateTypeFilterText += `,"UpdateTypeFilter":`
+		updateTypeFilterText = fmt.Sprint(updateTypeFilterText, strconv.Itoa(*updateTypeFilter))
+	}
+	if *negativeUpdateTypeFilter >= 0 {
+		negativeUpdateTypeFilterText += `,"NegativeUpdateTypeFilter":`
+		negativeUpdateTypeFilterText = fmt.Sprint(negativeUpdateTypeFilterText, strconv.Itoa(*negativeUpdateTypeFilter))
+	}
+	
+	loginMessageBytes := []byte(`{"ID":1,"Domain":"Login","Key":{"Name":"<USER>","Elements":{"ApplicationId":"<APP_ID>","Position":"<POSITION>"` + updateTypeFilterText + negativeUpdateTypeFilterText + `}}}`)
 	loginMessageBytes = bytes.Replace(loginMessageBytes, []byte("<USER>"), []byte(*user), 1)
 	loginMessageBytes = bytes.Replace(loginMessageBytes, []byte("<APP_ID>"), []byte(*appId), 1)
 	loginMessageBytes = bytes.Replace(loginMessageBytes, []byte("<POSITION>"), []byte(*position), 1)
@@ -118,11 +156,11 @@ func main() {
 }
 
 // Parse JSON message at a high level
-func processMessage(c *websocket.Conn, message map[string]interface{}, snapshot *bool ) {
+func processMessage(c *websocket.Conn, message map[string]interface{}, snapshot *bool, service *string) {
 	switch message["Type"] {
 		case "Refresh":
 			if(message["Domain"] == "Login"){
-				sendMarketPriceRequest(c, snapshot)
+				sendMarketPriceRequest(c, snapshot, service)
 			}
 		case "Ping":
 			sendMessage(c, []byte(`{"Type":"Pong"}`))
@@ -131,8 +169,12 @@ func processMessage(c *websocket.Conn, message map[string]interface{}, snapshot 
 }
 
 // Create and send simple Market Price request
-func sendMarketPriceRequest(c *websocket.Conn, snapshot *bool) {
-	sendMessage(c, []byte(`{"ID":2,"Key":{"Name":"TRI.N"},` + `"Streaming":` + strconv.FormatBool(!*snapshot) + `}`))
+func sendMarketPriceRequest(c *websocket.Conn, snapshot *bool, service *string) {
+	serviceInfo := ""
+        if len(*service) > 1 {
+		serviceInfo += `, "Service":"` + *service + `"`
+	}
+	sendMessage(c, []byte(`{"ID":2,"Key":{"Name":"TRI.N"` + serviceInfo + `},` + `"Streaming":` + strconv.FormatBool(!*snapshot) + `}`))
 }
 
 // Helper to send bytes over WebSocket connection

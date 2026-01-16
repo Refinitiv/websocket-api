@@ -79,3 +79,6 @@ Pressing the CTRL+C buttons terminates any example.
 * `market_price_posting.pl` - Source file for the market\_price\_posting example.
 
 * `market_price_ping.pl` - Source file for the market\_price\_ping example.
+
+## Versions Used In Test
+- Perl 5.36.3

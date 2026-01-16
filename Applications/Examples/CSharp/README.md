@@ -59,3 +59,6 @@ Pressing the CTRL+C buttons terminates any example.
 * `MarketPricePostingExample.cs` - Source file for the MarketPricePostingExample example.
 
 * `MarketPricePingExample.cs` - Source file for the MarketPricePingExample example.
+
+## Versions Used In Test
+- Windows Visual Studio 2022 with .NET 8

@@ -136,3 +136,6 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 #### Source File Description
 
 * `market_price_rto_jwt_auth.go` - Source file for the market_price_rto_jwt_auth example.
+
+## Versions Used In Test
+- Go Programming Language 1.23.4

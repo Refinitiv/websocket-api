@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 //|                See the project's LICENSE.md for details.
-//|           Copyright (C) 2017-2020,2024 LSEG. All rights reserved.
+//|           Copyright (C) 2017-2020,2024,2026 LSEG. All rights reserved.
 //|-----------------------------------------------------------------------------
 
 
@@ -16,6 +16,30 @@ var user = 'root'
 var ip = require("ip");
 var position = ip.address();
 var snapshot = false;
+var service = ''
+
+var updateTypeFilter = -1;		// Determines what Update Types are desired. See more details below.
+var negativeUpdateTypeFilter = -1;	// Determines what Update Types are NOT desired. See more details below.
+
+        /*
+            - Update Type Filters -
+            A single value, converted into binary, can be used to determine what Update Types
+            you want filtered in your responses.
+
+            UPDATE TYPE FILTERS
+            Unspecified = 0x001
+            Quote = 0x002
+            Trade = 0x004
+            News Alert = 0x008
+            Volume Alert = 0x010
+            Order Indication = 0x020
+            Closing Run = 0x040
+            Correction = 0x080
+            Market Digest = 0x100
+            Quotes Trade = 0x200
+            Multiple = 0x400
+            Verify = 0x800
+         */
 
 // Global Variables
 var webSocketClosed = false;
@@ -47,9 +71,21 @@ if (argv.snapshot)
 {
 	snapshot = true;
 }
+if(argv.service)
+{
+	service = argv.service.toString();
+}
+if(argv.updateTypeFilter)
+{
+	updateTypeFilter = argv.updateTypeFilter;
+}
+if(argv.negativeUpdateTypeFilter)
+{
+	negativeUpdateTypeFilter = argv.negativeUpdateTypeFilter;
+}
 if(argv.help)
 {
-	console.log("Usage: market_price.js [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--help]");
+	console.log("Usage: market_price.js [--hostname hostname] [--port port] [--app_id app_id] [--user user] [--position position] [--snapshot] [--updateTypeFilter] [--negativeUpdateTypeFilter] [--service] [--help]");
 	process.exit();
 }
 
@@ -66,7 +102,7 @@ _websocket.onerror = onError;
 // Create and send simple Market Price request
 function sendMarketPriceRequest()
 {
-	var msg = '{"ID":2,"Key":{"Name":"TRI.N"},' + '"Streaming":' + (!snapshot).toString() +'}';
+	var msg = '{"ID":2,"Key":{"Name":"TRI.N"' + ',"Service":' + '"' + service + '"},' + '"Streaming":' + (!snapshot).toString() +'}';
 	_websocket.send(msg);
 	console.log("SENT:");
 	console.log(JSON.stringify(JSON.parse(msg), null, 2));
@@ -111,8 +147,14 @@ function onOpen(evt)
 {
 	console.log("WebSocket successfully connected!");
 	
+	var updateTypeFilterText = "";
+	var negativeUpdateTypeFilterText = "";
+	if (updateTypeFilter >= 0)
+		updateTypeFilterText = ',"UpdateTypeFilter":' + updateTypeFilter;
+	if (negativeUpdateTypeFilter >= 0)
+		negativeUpdateTypeFilterText = ',"NegativeUpdateTypeFilter":' + negativeUpdateTypeFilter;
 	// Generate a login request from command line data (or defaults) and send
-	var msg = '{"ID":1,"Domain":"Login","Key":{"Name":"","Elements":{"ApplicationId":"","Position":""}}}'
+	var msg = '{"ID":1,"Domain":"Login","Key":{"Name":"","Elements":{"ApplicationId":"","Position":""' + updateTypeFilterText + negativeUpdateTypeFilterText + '}}}'
 	var msgJson = JSON.parse(msg);
 	msgJson.Key.Name = user
 	msgJson.Key.Elements.ApplicationId = appId

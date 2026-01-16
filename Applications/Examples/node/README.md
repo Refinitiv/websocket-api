@@ -78,3 +78,5 @@ Pressing the CTRL+C buttons terminates any example.
 
 * `market_price_ping.js` - Source file for the market\_price\_ping example.
 
+## Versions Used In Test
+- Node 22.13.0

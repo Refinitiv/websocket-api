@@ -201,3 +201,6 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 
 * `MarketPriceRTOJwtAuthExample.cs` - Source file for the MarketPriceRTOJwtAuthExample example.
 * `MarketPriceRTOJwtAuthExample.csproj` - visual studio project
+
+## Versions Used In Test
+- Windows Visual Studio 2022 with .NET 8

@@ -2,7 +2,7 @@
 //|            This source code is provided under the Apache 2.0 license
 //|  and is provided AS IS with no warranty or guarantee of fit for purpose.
 //|                See the project's LICENSE.md for details.
-//|            Copyright (C) 2018-2021,2024 LSEG. All rights reserved.
+//|            Copyright (C) 2018-2021,2024,2026 LSEG. All rights reserved.
 //|-----------------------------------------------------------------------------
 
 using System;
@@ -59,6 +59,35 @@ namespace MarketPriceExample
 
         /// <summary> This is used to cancel operations when something goes wrong. </summary>
         private CancellationTokenSource _cts = new CancellationTokenSource();
+
+        /// <summary>This is used to determine what Update Types are desired. See below for more information.</summary>
+        private long _updateTypeFilter = -1;
+
+        /// <summary>This is used to determine what Update Types are NOT desired. See below for more information.</summary>
+        private long _negativeUpdateTypeFilter = -1;
+
+        /// <summary>The service name for the requested item.</summary>
+        private string _service;
+
+        /*
+            - Update Type Filters -
+            A single value, converted into binary, can be used to determine what Update Types
+            you want filtered in your responses.
+
+            UPDATE TYPE FILTERS
+            Unspecified = 0x001
+            Quote = 0x002
+            Trade = 0x004
+            News Alert = 0x008
+            Volume Alert = 0x010
+            Order Indication = 0x020
+            Closing Run = 0x040
+            Correction = 0x080
+            Market Digest = 0x100
+            Quotes Trade = 0x200
+            Multiple = 0x400
+            Verify = 0x800
+         */
 
         static void Main(string[] args)
         {
@@ -182,6 +211,12 @@ namespace MarketPriceExample
         /// </summary>
         private void SendLogin()
         {
+            string updateTypeFilterText = "";
+            string negativeUpdateTypeFilterText = "";
+            if (_updateTypeFilter >= 0)
+                updateTypeFilterText = ",\"UpdateTypeFilter\":" + _updateTypeFilter;
+            if (_negativeUpdateTypeFilter >= 0)
+                negativeUpdateTypeFilterText = ",\"NegativeUpdateTypeFilter\":" + _negativeUpdateTypeFilter;
             string msg;
             msg = "{"
                     + "\"ID\": 1,"
@@ -191,6 +226,8 @@ namespace MarketPriceExample
                     + "\"Elements\":{"
                     + "\"ApplicationId\":\"" + _appId + "\", "
                     + "\"Position\": \"" + _position + "\""
+                    + updateTypeFilterText
+                    + negativeUpdateTypeFilterText
                     + "}"
                     + "}";
             msg += "}";
@@ -220,11 +257,17 @@ namespace MarketPriceExample
                             /* Login was successful. */
                             _loggedIn = true;
 
+                            string serviceInfo = "";
+                            if (_service.Length > 0)
+                            {
+                                serviceInfo += ", \"Service\":\"" + _service + "\"";
+                            }
+
                             /* Request an item. */
                             SendMessage(
                                 "{"
                                 + "\"ID\": 2,"
-                                + "\"Key\": {\"Name\":\"TRI.N\"},"
+                                + "\"Key\": {\"Name\":\"TRI.N\"" + serviceInfo + "},"
                                 + "\"Streaming\":" + (!_snapshot).ToString().ToLower()
                                 + "}");
                         }
@@ -300,6 +343,21 @@ namespace MarketPriceExample
                     case "--help":
                         PrintCommandLineUsageAndExit(0);
                         break;
+                    case "--updateTypeFilter":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
+                        _updateTypeFilter = long.Parse(args[++i]);
+                        break;
+                    case "--negativeUpdateTypeFilter":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
+                        _negativeUpdateTypeFilter = long.Parse(args[++i]);
+                        break;
+                    case "--service":
+                        if (i + 1 >= args.Length)
+                            GripeAboutMissingOptionArgumentAndExit(args[i]);
+                        _service = args[++i];
+                        break;
                     default:
                         Console.WriteLine("Unknown option: {0}", args[i]);
                         PrintCommandLineUsageAndExit(1);
@@ -324,6 +382,9 @@ namespace MarketPriceExample
                 "   [-p|--port port]                 \n" +
                 "   [-u|--user user]                 \n" +
                 "   [-s|--snapshot]                  \n" +
+                "   [--service]                       \n" +
+                "   [--updateTypeFilter]             \n" +
+                "   [--negativeUpdateTypeFilter]             \n" +
                 "   [--help]                      \n",
                 System.AppDomain.CurrentDomain.FriendlyName);
             Environment.Exit(exitStatus);

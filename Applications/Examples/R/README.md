@@ -44,7 +44,7 @@ Pressing the CTRL+C buttons terminates any example.
 ### Windows/macOS
 1. __Install R__
     - Go to: <https://www.r-project.org/about.html>
-    - Download R version 3.6.X, 3.6.3 is our current latest supported version.
+    - Download R version 4.5.X, 4.5.1 is our current latest supported version.
     - Follow the installation instructions for your machine
 2. __Install libraries__
     - Run "R" and in the prompt, enter:
@@ -52,8 +52,7 @@ Pressing the CTRL+C buttons terminates any example.
       - `install.packages("curl")`
       - `install.packages("devtools")`
       - `install.packages("GetoptLong")`
-      - `library(devtools)`
-      - `install_github("brettjbush/R-Websockets")`
+	  - `install.packages("websocket")`
     - (A GUI window will open for you to choose a mirror to download from)
     - (You may be asked to create a personal package folder if you're not running as root)
 3. __Run examples__
@@ -79,8 +78,7 @@ Pressing the CTRL+C buttons terminates any example.
       - `install.packages("curl")`
       - `install.packages("devtools")`
       - `install.packages("GetoptLong")`
-      - `library(devtools)`
-      - `install_github("brettjbush/R-Websockets")`
+	  - `install.packages("websocket")`
     - (A GUI window will open for you to choose a mirror to download from)
     - (You may be asked to create a personal package folder if you're not running as root)
 3. __Run examples__
@@ -99,3 +97,6 @@ Pressing the CTRL+C buttons terminates any example.
 * `market_price_posting.R` - Source file for the market\_price\_posting example.
 
 * `market_price_ping.R` - Source file for the market\_price\_ping example.
+
+## Versions Used In Test
+- RTools 4.5.1

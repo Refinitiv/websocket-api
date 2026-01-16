@@ -218,3 +218,12 @@ NOTE about hotstandby: Specifies the hotstandby mechanism to create two connecti
 #### Source File Description
 
 * `market_price_rto_jwt_auth.py` - Source file for the market\_price\_rto\_jwt\_auth example.
+
+
+## Websockets Library Information
+By default, this application uses the Websockets library to initiate websocket connections.
+It may use environment variables to alter its connection, such as http_proxy and https_proxy.
+See details about the websockets library here: https://pypi.org/project/websockets/
+
+## Versions Used In Test
+- Python 3.13.1
