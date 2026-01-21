@@ -42,6 +42,7 @@ import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketExtension;
 import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.WebSocketFrame;
 
 /*
  * This example demonstrates authenticating via LSEG Delivery Platform, using an
@@ -79,6 +80,7 @@ public class MarketPriceRTOAuthentication {
     public static String service = "ELEKTRON_DD";
     public static String scope = "trapi.streaming.pricing.read";
     public static JSONObject authJson = null;
+    
 
     final private static int passwordLengthMask               = 0x1;
     final private static int passwordUppercaseLetterMask      = 0x2;
@@ -431,6 +433,16 @@ public class MarketPriceRTOAuthentication {
                     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws JSONException {
                         System.out.println("WebSocket successfully connected!");
                         sendLoginRequest(websocket, authJson.getString("access_token"), true);
+                    }
+                    
+                    /**
+                     * Called when websocket connected closes, gracefully close application
+                     */
+                    @Override
+                    public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+                        System.out.println("WebSocket disconnected. Closed by server: " + closedByServer);
+                    	System.out.println("Closing application.");
+                        System.exit(0);
                     }
                 })
                 .addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)

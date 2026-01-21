@@ -29,6 +29,7 @@ import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketExtension;
 import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.WebSocketFrame;
 
 public class MarketPricePing {
 
@@ -42,6 +43,7 @@ public class MarketPricePing {
 	public static long pingSendTime = 0;
     public static long pingTimeoutInterval = 30;
     public static long pingTimeoutTime = 0;
+    public static int TIMEOUT = 30000;
 
 	public static void main(String[] args) {
 
@@ -130,7 +132,7 @@ public class MarketPricePing {
 	public static WebSocket connect() throws IOException, WebSocketException
     {
         return new WebSocketFactory()
-                //.setConnectionTimeout(TIMEOUT)
+                .setConnectionTimeout(TIMEOUT)
                 .createSocket(server)
                 .addProtocol("tr_json2")
                 .addListener(new WebSocketAdapter() {
@@ -163,6 +165,16 @@ public class MarketPricePing {
                         pingSendTime = System.currentTimeMillis() + (pingTimeoutInterval  * 1000 / 3);
 
                         sendLoginRequest(websocket);
+                    }
+
+                    /**
+                     * Called when websocket connected closes, gracefully close application
+                     */
+                    @Override
+                    public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+                        System.out.println("WebSocket disconnected. Closed by server: " + closedByServer);
+                    	System.out.println("Closing application.");
+                        System.exit(0);
                     }
                 })
                 .addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)

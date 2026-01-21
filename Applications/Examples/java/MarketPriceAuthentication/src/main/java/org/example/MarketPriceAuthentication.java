@@ -47,6 +47,7 @@ import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketExtension;
 import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.WebSocketFrame;
 
 public class MarketPriceAuthentication {
 	
@@ -61,6 +62,7 @@ public class MarketPriceAuthentication {
     public static String password = "";
 	public static String authHostname = "127.0.0.1";
     public static String authPort = "8443";
+    public static int TIMEOUT = 30000;
 
 	public static void main(String[] args) {
 		
@@ -199,7 +201,7 @@ public class MarketPriceAuthentication {
 	public static WebSocket connect() throws IOException, WebSocketException
     {
         return new WebSocketFactory()
-                //.setConnectionTimeout(TIMEOUT)
+                .setConnectionTimeout(TIMEOUT)
                 .createSocket(server)
                 .addProtocol("tr_json2")
                 .addHeader("Cookie", String.format("AuthToken=%s;AuthPosition=%s;applicationId=%s;", authToken, position, appId))
@@ -226,6 +228,16 @@ public class MarketPriceAuthentication {
                      */
                     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws JSONException {
                     	System.out.println("WebSocket successfully connected!");
+                    }
+
+                    /**
+                     * Called when websocket connected closes, gracefully close application
+                     */
+                    @Override
+                    public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+                        System.out.println("WebSocket disconnected. Closed by server: " + closedByServer);
+                    	System.out.println("Closing application.");
+                        System.exit(0);
                     }
                 })
                 .addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)
